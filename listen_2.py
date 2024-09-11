@@ -38,6 +38,8 @@ def move_robot():
                 auto_motion = 'stop'
                 pibot.value = (0,0)
                 auto_flag = False
+                left_encoder.reset()
+                right_encoder.reset()
                 continue
             else:
                 auto_motion = 'forward'
