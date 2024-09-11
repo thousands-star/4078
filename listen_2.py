@@ -63,7 +63,7 @@ def move_robot():
             if auto_motion == 'turning':
                 left_encoder.reset()
                 right_encoder.reset()
-                while ((((abs(left_disp) - left_encoder.value) + (abs(right_disp) - right_encoder.value))/2) < 0):
+                while (( ((abs(left_disp) - left_encoder.value) + (abs(right_disp) - right_encoder.value))/2 ) > 0):
                     # See which has to go in front
                     ls = left_disp / abs(left_disp) * 0.7
                     rs = right_disp / abs(right_disp) * 0.7
