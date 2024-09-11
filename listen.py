@@ -54,7 +54,7 @@ def move_robot():
                 right_speed = pid_right(right_encoder.value)
                 if motion == 'forward': pibot.value = (left_speed, right_speed)
                 else: pibot.value = (-left_speed, -right_speed)
-                # print('Value', left_encoder.value, right_encoder.value)
+                print('Value', left_encoder.value, right_encoder.value)
                 # print('Speed', left_speed, right_speed)
         time.sleep(0.005)
     
