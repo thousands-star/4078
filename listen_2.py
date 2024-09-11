@@ -65,10 +65,14 @@ def move_robot():
                 right_encoder.reset()
                 while(abs(left_disp - left_encoder.value) > 2):
                     # See which has to go in front
-                    ls = left_disp / abs(left_disp) * 0.35
-                    rs = right_disp / abs(right_disp) * 0.35
+                    ls = left_disp / abs(left_disp) * 0.3
+                    rs = right_disp / abs(right_disp) * 0.3
                     pibot.value = (ls,rs)
                     print("Value", left_encoder.value, right_encoder.value)
+                    # Make a breaking logic if encoder value too big, this is to avoid something bad happen
+                    if(left_encoder.value > abs(left_disp) or right_encoder.value > abs(right_disp)):
+                        break
+                    
                 pibot.value = (0,0)
                 auto_motion = 'stop'
                 auto_flag = False
