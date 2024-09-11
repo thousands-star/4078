@@ -34,17 +34,18 @@ def move_robot():
 
     while True:
         if auto_flag is True:
-            if abs((left_disp+right_disp)/2 - (left_encoder.value + right_encoder.value)/2) < 3:
-                auto_motion = 'stop'
-                pibot.value = (0,0)
-                auto_flag = False
+            if auto_motion == 'forward':
                 left_encoder.reset()
                 right_encoder.reset()
-                continue
-            else:
-                auto_motion = 'forward'
-                pibot.value = (0.6,0.6)
-                print("Value", left_encoder.value, right_encoder.value)
+                while(abs((left_disp+right_disp)/2 - (left_encoder.value + right_encoder.value)/2) > 3):
+                    pibot.value = (0.6,0.6)
+                    print("Value", left_encoder.value, right_encoder.value)
+                    # Make a breaking logic if encoder value too big, this is to avoid something bad happen
+                    if((left_encoder.value + right_encoder.value) > (right_disp+left_disp+3)):
+                        break
+                pibot.value = (0,0)
+                auto_motion = 'stop'
+                auto_flag = False
         else:
             print("auto_flag is never toggled")
             time.sleep(1)
