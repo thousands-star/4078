@@ -30,6 +30,7 @@ class Encoder(object):
 def move_robot():
     global use_pid, left_speed, right_speed, left_disp, right_disp
     flag_new_pid_cycle = True
+    auto_flag = False
 
     while True:
         if auto_flag is True:
