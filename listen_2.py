@@ -39,10 +39,10 @@ def move_robot():
                 right_encoder.reset()
                 while(abs((left_disp+right_disp)/2 - (left_encoder.value + right_encoder.value)/2) > 3):
                     pibot.value = (0.6,0.6)
-                    print("Value", left_encoder.value, right_encoder.value)
                     # Make a breaking logic if encoder value too big, this is to avoid something bad happen
                     if((left_encoder.value + right_encoder.value) > (right_disp+left_disp+3)):
                         break
+                print("Value", left_encoder.value, right_encoder.value)
                 pibot.value = (0,0)
                 auto_motion = 'stop'
                 auto_flag = False
@@ -52,10 +52,10 @@ def move_robot():
                 right_encoder.reset()
                 while(abs((left_disp+right_disp)/2 - (left_encoder.value + right_encoder.value)/2) > 3):
                     pibot.value = (-0.6,-0.6)
-                    print("Value", left_encoder.value, right_encoder.value)
                     # Make a breaking logic if encoder value too big, this is to avoid something bad happen
                     if((left_encoder.value + right_encoder.value) > (abs(right_disp+left_disp)+3)):
                         break
+                print("Value", left_encoder.value, right_encoder.value)
                 pibot.value = (0,0)
                 auto_motion = 'stop'
                 auto_flag = False
@@ -68,11 +68,10 @@ def move_robot():
                     ls = left_disp / abs(left_disp) * 0.7
                     rs = right_disp / abs(right_disp) * 0.7
                     pibot.value = (ls,rs)
-                    print("Value", left_encoder.value, right_encoder.value)
                     # Make a breaking logic if encoder value too big, this is to avoid something bad happen
                     if(left_encoder.value > abs(left_disp) or right_encoder.value > abs(right_disp)):
                         break
-
+                print("Value", left_encoder.value, right_encoder.value)
                 pibot.value = (0,0)
                 auto_motion = 'stop'
                 auto_flag = False
