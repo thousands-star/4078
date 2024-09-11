@@ -27,6 +27,7 @@ class Encoder(object):
         
 
 # main function to control the robot wheels
+# With Simple displacement-controlled function installed.
 def move_robot():
     global use_pid, left_speed, right_speed, motion
     global auto_flag, left_disp, right_disp, auto_motion
