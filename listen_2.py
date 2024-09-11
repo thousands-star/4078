@@ -41,10 +41,11 @@ def move_robot():
                 continue
             else:
                 auto_motion = 'forward'
-                pibot.value = (0.4,0.4)
+                pibot.value = (0.5,0.5)
+                print("Value", left_encoder.value, right_encoder.value)
         else:
             print("auto_flag is never toggled")
-            time.sleep(0.005)
+            time.sleep(0.01)
         ### if not using pid, just move the wheels as commanded
         # if not use_pid:
         #     pibot.value = (left_speed, right_speed)          
