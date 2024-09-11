@@ -46,6 +46,19 @@ def move_robot():
                 pibot.value = (0,0)
                 auto_motion = 'stop'
                 auto_flag = False
+
+            if auto_motion == 'turning':
+                left_encoder.reset()
+                right_encoder.reset()
+                while(abs(left_disp - left_encoder) > 2):
+                    # See which has to go in front
+                    ls = left_disp / abs(left_disp) * 0.35
+                    rs = right_disp / abs(right_disp) * 0.35
+                    pibot.value = (ls,rs)
+                    print("Value", left_encoder.value, right_encoder.value)
+                pibot.value = (0,0)
+                auto_motion = 'stop'
+                auto_flag = False
         else:
             print("auto_flag is never toggled")
             time.sleep(1)
@@ -98,7 +111,6 @@ def capture_image():
 def move():
     global left_speed, right_speed, motion
     left_speed, right_speed = float(request.args.get('left_speed')), float(request.args.get('right_speed'))
-    
     if (left_speed == 0 and right_speed == 0):
         motion = 'stop'
     elif (left_speed != right_speed ):
