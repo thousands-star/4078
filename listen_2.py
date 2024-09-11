@@ -6,9 +6,7 @@ import io
 import time
 import threading
 
-
 app = Flask(__name__)
-
 
 class Encoder(object):
     def __init__(self, pin):
@@ -30,14 +28,22 @@ class Encoder(object):
 
 # main function to control the robot wheels
 def move_robot():
-    global use_pid, left_speed, right_speed
+    global use_pid, left_speed, right_speed, left_disp, right_disp
     flag_new_pid_cycle = True
+
     while True:
-        
+        if auto_flag is True:
+            if abs((left_disp+right_disp)/2) < 2:
+                motion = 'stop'
+                pibot.value = (0,0)
+                auto_flag = False
+                continue
+            else:
+                motion = 'forward'
+                pibot.value = (0.3,0.3)
         ### if not using pid, just move the wheels as commanded
         if not use_pid:
             pibot.value = (left_speed, right_speed)          
-        
         ### with pid, left wheel is set as reference, and right wheel will try to match the encoder counter of left wheel
         ### pid only runs when robot moves forward or backward. Turning does not use pid
         else:
@@ -59,46 +65,6 @@ def move_robot():
                 # print('Speed', left_speed, right_speed)
         time.sleep(0.005)
 
-# main function to control the robot wheels
-def robot_disp():
-    global left_disp, right_disp
-    while True:
-        # For a single run to desired location
-        left_encoder.reset()
-        right_encoder.reset()
-        while(abs(left_encoder.value - left_disp) < 2 and abs(right_encoder.value - right_disp) < 2):
-            left_dist = left_encoder.value - left_disp
-            right_dist = right_encoder.value - right_disp
-            dist = (left_dist+right_dist) / 2
-            if(motion == 'forward'):
-                if(left_dist > 0):
-                    pibot.value = (0.1, 0.1)
-                if(left_dist < 0):
-                    pibot.value = (-0.1, -0.1)
-            if(motion == 'turning'):
-                pibot.value = (0.1, -0.1)
-
-
-        if not use_pid:
-            pibot.value = (left_speed, right_speed)          
-        else:
-            if (motion == 'stop') or (motion == 'turning'):
-                pibot.value = (left_speed, right_speed) 
-     
-            else:
-                left_speed, right_speed = abs(left_speed), abs(right_speed)
-                if flag_new_pid_cycle:
-                    pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0,1), starting_output=right_speed)
-                    flag_new_pid_cycle = False
-                pid_right.setpoint = left_encoder.value
-                right_speed = pid_right(right_encoder.value)
-                if motion == 'forward': pibot.value = (left_speed, right_speed)
-                else: pibot.value = (-left_speed, -right_speed)
-                print('Value', left_encoder.value, right_encoder.value)
-                print('Speed', left_speed, right_speed)
-        time.sleep(0.005)
-    
-    
 # Receive confirmation whether to use pid or not to control the wheels (forward & backward)
 @app.route('/pid')
 def set_pid():
@@ -138,19 +104,21 @@ def move():
     # if 'time' in request.args:
 
 @app.route('/disp')
-def displacement():
-    global left_disp, right_disp, motion
-    left_disp, right_disp = float(request.args.get('left_disp')), float(request.args.get('right_disp'))
-
-    if (left_disp == 0 and right_disp == 0):
-        motion = 'stop'
-    elif (left_disp != right_disp ):
-        motion = 'turning'
-    elif (left_disp > 0 and right_disp > 0):
-        motion = 'forward'
-    elif (left_disp < 0 and right_disp < 0):
-        motion = 'backward'
-    return motion
+def disp():
+    global left_disp, right_disp, auto_motion, auto_flag
+    if(auto_flag is False):
+        left_disp, right_disp = float(request.args.get('left_disp')), float(request.args.get('right_disp'))
+        print("Value",left_disp,right_disp)
+        if (left_disp == 0 and right_disp == 0):
+            auto_motion = 'stop'
+        elif (left_disp != right_disp ):
+            auto_motion = 'turning'
+        elif (left_disp > 0 and right_disp > 0):
+            auto_motion = 'forward'
+        elif (left_disp < 0 and right_disp < 0):
+            auto_motion = 'backward'
+        auto_flag = True
+    return auto_motion
 
 
 # Constants
@@ -177,6 +145,8 @@ kd = 0
 left_speed, right_speed = 0, 0
 left_disp, right_disp = 0, 0
 motion = ''
+auto_motion = ''
+auto_flag = False
 
 # Initialize the PiCamera
 picam2 = Picamera2()
@@ -195,7 +165,6 @@ flask_thread.start()
 try:
     while True:
         move_robot()
-        robot_disp()
 except KeyboardInterrupt:
     pibot.stop()
     picam2.stop()
