@@ -34,51 +34,61 @@ def move_robot():
     flag_new_pid_cycle = True
 
     while True:
-        if auto_flag is True:
+        # Check if there are commands in the queue
+        if command_queue:
+            # Fetch the first command from the queue
+            auto_motion, left_disp, right_disp = command_queue.pop(0)
+
+            # Execute the command based on auto_motion
             if auto_motion == 'forward':
                 left_encoder.reset()
                 right_encoder.reset()
-                while(abs((left_disp+right_disp)/2 - (left_encoder.value + right_encoder.value)/2) > 3):
-                    pibot.value = (0.6,0.6)
-                    # Make a breaking logic if encoder value too big, this is to avoid something bad happen
-                    if((left_encoder.value + right_encoder.value) > (right_disp+left_disp+3)):
+                while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
+                    pibot.value = (0.6, 0.6)
+                    # Breaking logic if the encoder value goes beyond expected range
+                    if (left_encoder.value + right_encoder.value) > (right_disp + left_disp + 3):
                         break
-                pibot.value = (0,0)
+                pibot.value = (0, 0)
                 print("Value", left_encoder.value, right_encoder.value)
-                auto_motion = 'stop'
-                auto_flag = False
 
-            if auto_motion == 'backward':
+            elif auto_motion == 'backward':
                 left_encoder.reset()
                 right_encoder.reset()
-                while(abs((left_disp+right_disp)/2 - (left_encoder.value + right_encoder.value)/2) > 3):
-                    pibot.value = (-0.6,-0.6)
-                    # Make a breaking logic if encoder value too big, this is to avoid something bad happen
-                    if((left_encoder.value + right_encoder.value) > (abs(right_disp+left_disp)+3)):
+                while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
+                    pibot.value = (-0.6, -0.6)
+                    # Breaking logic if the encoder value goes beyond expected range
+                    if (left_encoder.value + right_encoder.value) > (abs(right_disp + left_disp) + 3):
                         break
-                pibot.value = (0,0)
+                pibot.value = (0, 0)
                 print("Value", left_encoder.value, right_encoder.value)
-                auto_motion = 'stop'
-                auto_flag = False
 
-            if auto_motion == 'turning':
+            elif auto_motion == 'turning':
                 left_encoder.reset()
                 right_encoder.reset()
-                while (( ((abs(left_disp) - left_encoder.value) + (abs(right_disp) - right_encoder.value))/2 ) > 0):
-                    # See which has to go in front
+                while ((abs(left_disp) - left_encoder.value) + (abs(right_disp) - right_encoder.value)) / 2 > 0:
+                    # Determine the direction for turning
                     ls = left_disp / abs(left_disp) * 0.8
                     rs = right_disp / abs(right_disp) * 0.8
-                    pibot.value = (ls,rs)
-                    # Make a breaking logic if encoder value too big, this is to avoid something bad happen
-                    if(left_encoder.value > abs(left_disp) or right_encoder.value > abs(right_disp)):
+                    pibot.value = (ls, rs)
+                    # Breaking logic if the encoder value goes beyond expected range
+                    if left_encoder.value > abs(left_disp) or right_encoder.value > abs(right_disp):
                         break
-                pibot.value = (0,0)
+                pibot.value = (0, 0)
                 print("Value", left_encoder.value, right_encoder.value)
-                auto_motion = 'stop'
-                auto_flag = False
+
+            # Once the command is executed, mark auto_motion as 'stop'
+            auto_motion = 'stop'
+            auto_flag = False
+
         else:
-            print("auto_flag is never toggled")
+            # If no commands are in the queue, pause the robot and wait
+            print("Waiting for commands in queue...")
+            pibot.value = (0, 0)
             time.sleep(1)
+
+        # Small delay to avoid busy-waiting
+        time.sleep(0.005)
+        
         ### if not using pid, just move the wheels as commanded
         # if not use_pid:
         #     pibot.value = (left_speed, right_speed)          
@@ -140,25 +150,27 @@ def move():
     
     # if 'time' in request.args:
 
+# The main function to enable autonomous driving
 @app.route('/disp')
 def disp():
-    global left_disp, right_disp, auto_motion, auto_flag
-    succeed = "True"
+    global left_disp, right_disp, auto_motion, auto_flag, command_queue
     if(auto_flag is False):
-        left_disp, right_disp = float(request.args.get('left_disp')), float(request.args.get('right_disp'))
-        print("Value",left_disp,right_disp)
-        if (left_disp == 0 and right_disp == 0):
-            auto_motion = 'stop'
-        elif (left_disp != right_disp ):
-            auto_motion = 'turning'
-        elif (left_disp > 0 and right_disp > 0):
-            auto_motion = 'forward'
-        elif (left_disp < 0 and right_disp < 0):
-            auto_motion = 'backward'
         auto_flag = True
-    else:
-        succeed = "False"
-    return succeed
+    
+    left_disp, right_disp = float(request.args.get('left_disp')), float(request.args.get('right_disp'))
+    print("Value",left_disp,right_disp)
+    if (left_disp == 0 and right_disp == 0):
+        auto_motion = 'stop'
+    elif (left_disp != right_disp ):
+        auto_motion = 'turning'
+    elif (left_disp > 0 and right_disp > 0):
+        auto_motion = 'forward'
+    elif (left_disp < 0 and right_disp < 0):
+        auto_motion = 'backward'
+
+    command_queue.append([auto_motion, left_disp, right_disp])
+
+    return auto_motion
 
 
 # Constants
@@ -187,6 +199,7 @@ left_disp, right_disp = 0, 0
 motion = ''
 auto_motion = ''
 auto_flag = False
+command_queue = []
 
 # Initialize the PiCamera
 picam2 = Picamera2()
