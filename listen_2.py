@@ -35,86 +35,85 @@ def move_robot():
 
     while True:
         # Check if there are commands in the queue
-        if command_queue:
-            # Fetch the first command from the queue
-            auto_motion, left_disp, right_disp = command_queue.pop(0)
+        # driving mode = 0 is manual driving via velocity control
+        # driving mode = 1 is auto driving via displacement control
+        if driving_mode:
+            if command_queue:
+                # Fetch the first command from the queue
+                auto_motion, left_disp, right_disp = command_queue.pop(0)
 
-            # Execute the command based on auto_motion
-            if auto_motion == 'forward':
-                left_encoder.reset()
-                right_encoder.reset()
-                while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
-                    pibot.value = (0.6, 0.6)
-                    # Breaking logic if the encoder value goes beyond expected range
-                    if (left_encoder.value + right_encoder.value) > (right_disp + left_disp + 3):
-                        break
+                # Execute the command based on auto_motion
+                if auto_motion == 'forward':
+                    left_encoder.reset()
+                    right_encoder.reset()
+                    while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
+                        pibot.value = (0.6, 0.6)
+                        # Breaking logic if the encoder value goes beyond expected range
+                        if (left_encoder.value + right_encoder.value) > (right_disp + left_disp + 3):
+                            break
+                    pibot.value = (0, 0)
+                    print(auto_motion, "Value", left_encoder.value, right_encoder.value)
+
+                elif auto_motion == 'backward':
+                    left_encoder.reset()
+                    right_encoder.reset()
+                    while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
+                        pibot.value = (-0.6, -0.6)
+                        # Breaking logic if the encoder value goes beyond expected range
+                        if (left_encoder.value + right_encoder.value) > (abs(right_disp + left_disp) + 3):
+                            break
+                    pibot.value = (0, 0)
+                    print(auto_motion, "Value", left_encoder.value, right_encoder.value)
+
+                elif auto_motion == 'turning':
+                    left_encoder.reset()
+                    right_encoder.reset()
+                    while ((abs(left_disp) - left_encoder.value) + (abs(right_disp) - right_encoder.value)) / 2 > 0:
+                        # Determine the direction for turning
+                        ls = left_disp / abs(left_disp) * 0.8
+                        rs = right_disp / abs(right_disp) * 0.8
+                        pibot.value = (ls, rs)
+                        # Breaking logic if the encoder value goes beyond expected range
+                        if left_encoder.value > abs(left_disp) or right_encoder.value > abs(right_disp):
+                            break
+                    pibot.value = (0, 0)
+                    print(auto_motion, "Value", left_encoder.value, right_encoder.value)
+
+                # Once the command is executed, mark auto_motion as 'stop'
+                auto_motion = 'stop'
+                # To ensure integrity of every command, directly execute next command would make the robot busy and which the effectiveness was affected.
+                time.sleep(0.1)
+
+            else:
+                # If no commands are in the queue, pause the robot and wait
+                print("Waiting for commands in queue...")
                 pibot.value = (0, 0)
-                print(auto_motion, "Value", left_encoder.value, right_encoder.value)
-
-            elif auto_motion == 'backward':
-                left_encoder.reset()
-                right_encoder.reset()
-                while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
-                    pibot.value = (-0.6, -0.6)
-                    # Breaking logic if the encoder value goes beyond expected range
-                    if (left_encoder.value + right_encoder.value) > (abs(right_disp + left_disp) + 3):
-                        break
-                pibot.value = (0, 0)
-                print(auto_motion, "Value", left_encoder.value, right_encoder.value)
-
-            elif auto_motion == 'turning':
-                left_encoder.reset()
-                right_encoder.reset()
-                while ((abs(left_disp) - left_encoder.value) + (abs(right_disp) - right_encoder.value)) / 2 > 0:
-                    # Determine the direction for turning
-                    ls = left_disp / abs(left_disp) * 0.8
-                    rs = right_disp / abs(right_disp) * 0.8
-                    pibot.value = (ls, rs)
-                    # Breaking logic if the encoder value goes beyond expected range
-                    if left_encoder.value > abs(left_disp) or right_encoder.value > abs(right_disp):
-                        break
-                pibot.value = (0, 0)
-                print(auto_motion, "Value", left_encoder.value, right_encoder.value)
-
-            # Once the command is executed, mark auto_motion as 'stop'
-            auto_motion = 'stop'
-            # To ensure integrity of every command, directly execute next command would make the robot busy and which the effectiveness was affected.
-            time.sleep(0.1)
-
+                time.sleep(1)
         else:
-            # If no commands are in the queue, pause the robot and wait
-            print("Waiting for commands in queue...")
-            pibot.value = (0, 0)
-            time.sleep(1)
+            # Enable Teleoperating when autonomous driving is not in use
+            ## if not using pid, just move the wheels as commanded
+            if not use_pid:
+                pibot.value = (left_speed, right_speed)          
+            ### with pid, left wheel is set as reference, and right wheel will try to match the encoder counter of left wheel
+            ### pid only runs when robot moves forward or backward. Turning does not use pid
+            else:
+                if (motion == 'stop') or (motion == 'turning'):
+                    pibot.value = (left_speed, right_speed) 
+                    left_encoder.reset()
+                    right_encoder.reset()
+                    flag_new_pid_cycle = True          
+                else:
+                    left_speed, right_speed = abs(left_speed), abs(right_speed)
+                    if flag_new_pid_cycle:
+                        pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0,1), starting_output=right_speed)
+                        flag_new_pid_cycle = False
+                    pid_right.setpoint = left_encoder.value
+                    right_speed = pid_right(right_encoder.value)
+                    if motion == 'forward': pibot.value = (left_speed, right_speed)
+                    else: pibot.value = (-left_speed, -right_speed)
+                    # print('Value', left_encoder.value, right_encoder.value)
+                    # print('Speed', left_speed, right_speed)
 
-        # Small delay to avoid busy-waiting
-        time.sleep(0.005)
-
-        # Enable Teleoperating when autonomous driving is not in use
-        # if (command_queue ):
-        ### if not using pid, just move the wheels as commanded
-        # if not use_pid:
-        #     pibot.value = (left_speed, right_speed)          
-        # ### with pid, left wheel is set as reference, and right wheel will try to match the encoder counter of left wheel
-        # ### pid only runs when robot moves forward or backward. Turning does not use pid
-        # else:
-        #     if (motion == 'stop') or (motion == 'turning'):
-        #         pibot.value = (left_speed, right_speed) 
-        #         left_encoder.reset()
-        #         right_encoder.reset()
-        #         flag_new_pid_cycle = True          
-        #     else:
-        #         left_speed, right_speed = abs(left_speed), abs(right_speed)
-        #         if flag_new_pid_cycle:
-        #             pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0,1), starting_output=right_speed)
-        #             flag_new_pid_cycle = False
-        #         pid_right.setpoint = left_encoder.value
-        #         right_speed = pid_right(right_encoder.value)
-        #         if motion == 'forward': pibot.value = (left_speed, right_speed)
-        #         else: pibot.value = (-left_speed, -right_speed)
-        #         # print('Value', left_encoder.value, right_encoder.value)
-        #         # print('Speed', left_speed, right_speed)
-        time.sleep(0.005)
 
 # Receive confirmation whether to use pid or not to control the wheels (forward & backward)
 @app.route('/pid')
@@ -174,6 +173,14 @@ def disp():
 
     return auto_motion
 
+# The function to switch mode
+@app.route('/mode')
+def mode():
+    global driving_mode
+    mode = float(request.args.get('driving_mode'))
+    driving_mode = mode
+    return mode
+
 
 # Constants
 # Pin Number
@@ -200,6 +207,7 @@ left_speed, right_speed = 0, 0
 left_disp, right_disp = 0, 0
 motion = ''
 auto_motion = ''
+driving_mode = 0
 command_queue = []
 
 # Initialize the PiCamera
