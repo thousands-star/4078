@@ -79,6 +79,8 @@ def move_robot():
             # Once the command is executed, mark auto_motion as 'stop'
             auto_motion = 'stop'
             auto_flag = False
+            # To ensure integrity of every command, directly execute next command would make the robot busy and which the effectiveness was affected.
+            time.sleep(0.1)
 
         else:
             # If no commands are in the queue, pause the robot and wait
