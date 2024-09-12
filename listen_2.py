@@ -49,7 +49,7 @@ def move_robot():
                     if (left_encoder.value + right_encoder.value) > (right_disp + left_disp + 3):
                         break
                 pibot.value = (0, 0)
-                print("Value", left_encoder.value, right_encoder.value)
+                print(auto_motion, "Value", left_encoder.value, right_encoder.value)
 
             elif auto_motion == 'backward':
                 left_encoder.reset()
@@ -60,7 +60,7 @@ def move_robot():
                     if (left_encoder.value + right_encoder.value) > (abs(right_disp + left_disp) + 3):
                         break
                 pibot.value = (0, 0)
-                print("Value", left_encoder.value, right_encoder.value)
+                print(auto_motion, "Value", left_encoder.value, right_encoder.value)
 
             elif auto_motion == 'turning':
                 left_encoder.reset()
@@ -74,7 +74,7 @@ def move_robot():
                     if left_encoder.value > abs(left_disp) or right_encoder.value > abs(right_disp):
                         break
                 pibot.value = (0, 0)
-                print("Value", left_encoder.value, right_encoder.value)
+                print(auto_motion, "Value", left_encoder.value, right_encoder.value)
 
             # Once the command is executed, mark auto_motion as 'stop'
             auto_motion = 'stop'
@@ -88,7 +88,7 @@ def move_robot():
 
         # Small delay to avoid busy-waiting
         time.sleep(0.005)
-        
+
         ### if not using pid, just move the wheels as commanded
         # if not use_pid:
         #     pibot.value = (left_speed, right_speed)          
