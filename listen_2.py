@@ -143,7 +143,7 @@ def move():
 @app.route('/disp')
 def disp():
     global left_disp, right_disp, auto_motion, auto_flag
-    succeed = True
+    succeed = 1
     if(auto_flag is False):
         left_disp, right_disp = float(request.args.get('left_disp')), float(request.args.get('right_disp'))
         print("Value",left_disp,right_disp)
@@ -157,7 +157,7 @@ def disp():
             auto_motion = 'backward'
         auto_flag = True
     else:
-        succeed = False
+        succeed = 0
     return succeed
 
 
