@@ -162,6 +162,7 @@ def disp():
     print("Value",left_disp,right_disp)
     if (left_disp == 0 and right_disp == 0):
         auto_motion = 'stop'
+        command_queue = []
     elif (left_disp != right_disp ):
         auto_motion = 'turning'
     elif (left_disp > 0 and right_disp > 0):
