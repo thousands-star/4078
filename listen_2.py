@@ -30,7 +30,7 @@ class Encoder(object):
 # With Simple displacement-controlled function installed.
 def move_robot():
     global use_pid, left_speed, right_speed, motion
-    global auto_flag, left_disp, right_disp, auto_motion
+    global command_queue, left_disp, right_disp, auto_motion
     flag_new_pid_cycle = True
 
     while True:
@@ -78,7 +78,6 @@ def move_robot():
 
             # Once the command is executed, mark auto_motion as 'stop'
             auto_motion = 'stop'
-            auto_flag = False
             # To ensure integrity of every command, directly execute next command would make the robot busy and which the effectiveness was affected.
             time.sleep(0.1)
 
@@ -91,6 +90,8 @@ def move_robot():
         # Small delay to avoid busy-waiting
         time.sleep(0.005)
 
+        # Enable Teleoperating when autonomous driving is not in use
+        # if (command_queue ):
         ### if not using pid, just move the wheels as commanded
         # if not use_pid:
         #     pibot.value = (left_speed, right_speed)          
@@ -155,10 +156,8 @@ def move():
 # The main function to enable autonomous driving
 @app.route('/disp')
 def disp():
-    global left_disp, right_disp, auto_motion, auto_flag, command_queue
-    if(auto_flag is False):
-        auto_flag = True
-    
+    global left_disp, right_disp, auto_motion, command_queue
+
     left_disp, right_disp = float(request.args.get('left_disp')), float(request.args.get('right_disp'))
     print("Value",left_disp,right_disp)
     if (left_disp == 0 and right_disp == 0):
@@ -200,7 +199,6 @@ left_speed, right_speed = 0, 0
 left_disp, right_disp = 0, 0
 motion = ''
 auto_motion = ''
-auto_flag = False
 command_queue = []
 
 # Initialize the PiCamera
