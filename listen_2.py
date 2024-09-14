@@ -69,8 +69,17 @@ def move_robot():
 
                     while ((abs(left_disp) - left_encoder.value) + (abs(right_disp) - right_encoder.value)) / 2 > 0:
                         # Determine the direction for turning
-                        ls = left_disp / abs(left_disp) * 0.6
-                        rs = right_disp / abs(right_disp) * 0.6
+                        # Because moving front is more powerful than moving backward
+                        # we have to take a look that which wheel is moving backward, and add more speed to it.
+                        if left_disp > 0:
+                            ls = 0.6
+                        else:
+                            ls = -0.65
+                        
+                        if right_disp > 0:
+                            rs = 0.6
+                        else:
+                            rs = -0.65
 
                         pibot.value = (ls, rs)
                         # Breaking logic if the encoder value goes beyond expected range
