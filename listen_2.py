@@ -71,19 +71,6 @@ def move_robot():
                         # Determine the direction for turning
                         ls = left_disp / abs(left_disp) * 0.6
                         rs = right_disp / abs(right_disp) * 0.6
-                        if(left_encoder.value > (right_encoder.value + 1)):
-                            rs = rs + 0.05
-                            ls = ls - 0.05
-                        elif(right_encoder.value > (left_encoder.value + 1)):
-                            ls = ls + 0.05
-                            rs = rs - 0.05
-                        
-                        if(left_encoder.value > (right_encoder.value + 3)):
-                            rs = rs + 0.1
-                            ls = ls - 0.1
-                        elif(right_encoder.value > (left_encoder.value + 3)):
-                            ls = ls + 0.1
-                            rs = rs - 0.1
 
                         pibot.value = (ls, rs)
                         # Breaking logic if the encoder value goes beyond expected range
