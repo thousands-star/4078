@@ -68,8 +68,8 @@ def move_robot():
                     right_encoder.reset()
                     while ((abs(left_disp) - left_encoder.value) + (abs(right_disp) - right_encoder.value)) / 2 > 0:
                         # Determine the direction for turning
-                        ls = left_disp / abs(left_disp) * 0.8
-                        rs = right_disp / abs(right_disp) * 0.8
+                        ls = left_disp / abs(left_disp) * 0.5
+                        rs = right_disp / abs(right_disp) * 0.5
                         pibot.value = (ls, rs)
                         # Breaking logic if the encoder value goes beyond expected range
                         if left_encoder.value > abs(left_disp) or right_encoder.value > abs(right_disp):
