@@ -74,12 +74,12 @@ def move_robot():
                         if left_disp > 0:
                             ls = 0.85
                         else:
-                            ls = -0.95
+                            ls = -0.8
                         
                         if right_disp > 0:
                             rs = 0.85
                         else:
-                            rs = -0.95
+                            rs = -0.8
 
                         pibot.value = (ls, rs)
                         # Breaking logic if the encoder value goes beyond expected range
