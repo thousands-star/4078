@@ -72,14 +72,14 @@ def move_robot():
                         # Because moving front is more powerful than moving backward
                         # we have to take a look that which wheel is moving backward, and add more speed to it.
                         if left_disp > 0:
-                            ls = 0.8
+                            ls = 0.85
                         else:
-                            ls = -0.8
+                            ls = -0.95
                         
                         if right_disp > 0:
-                            rs = 0.8
+                            rs = 0.85
                         else:
-                            rs = -0.8
+                            rs = -0.95
 
                         pibot.value = (ls, rs)
                         # Breaking logic if the encoder value goes beyond expected range
