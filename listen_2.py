@@ -123,7 +123,7 @@ def move_robot():
                         pibot.value = (ls, rs)
 
                         # Stopping condition: Check if both wheels have reached their target displacement
-                        if left_error < tolerance and right_error < tolerance:
+                        if (left_error + right_error) / 2 < tolerance:
                             break
 
                         # Add a small delay to avoid busy-waiting
