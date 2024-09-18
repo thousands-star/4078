@@ -53,6 +53,8 @@ def move_robot():
                     left_encoder.reset()
                     right_encoder.reset()
                     target_speed = 0.6
+                    current_left_speed = 0
+                    current_right_speed = 0
                     while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
                         current_left_speed = gradual_speed_change(current_left_speed, target_speed)
                         current_right_speed = gradual_speed_change(current_right_speed, target_speed)
@@ -66,6 +68,8 @@ def move_robot():
                 elif auto_motion == 'backward':
                     left_encoder.reset()
                     right_encoder.reset()
+                    current_left_speed = 0
+                    current_right_speed = 0
                     target_speed = -0.6
                     while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
                         current_left_speed = gradual_speed_change(current_left_speed, target_speed)
@@ -81,20 +85,22 @@ def move_robot():
                 elif auto_motion == 'turning':
                     left_encoder.reset()
                     right_encoder.reset()
+                    ls = 0
+                    rs = 0
 
                     while ((abs(left_disp) - left_encoder.value) + (abs(right_disp) - right_encoder.value)) / 2 > 0:
                         # Determine the direction for turning
                         # Because moving front is more powerful than moving backward
                         # we have to take a look that which wheel is moving backward, and add more speed to it.
                         if left_disp > 0:
-                            ls = gradual_speed_change(0.75)
+                            ls = gradual_speed_change(ls, 0.75)
                         else:
-                            ls = gradual_speed_change(-0.7)
+                            ls = gradual_speed_change(ls, -0.7)
                         
                         if right_disp > 0:
-                            rs = gradual_speed_change(0.75)
+                            rs = gradual_speed_change(rs, 0.75)
                         else:
-                            rs = gradual_speed_change(-0.7)
+                            rs = gradual_speed_change(rs, -0.7)
 
                         pibot.value = (ls, rs)
                         # Breaking logic if the encoder value goes beyond expected range
