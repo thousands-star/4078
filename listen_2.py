@@ -24,7 +24,15 @@ class Encoder(object):
     @property
     def value(self):
         return self._value
-        
+    
+# Gradual acceleration and deceleration
+def gradual_speed_change(current_speed, target_speed, step=0.05):
+    if abs(current_speed - target_speed) <= 0.01:  # Tolerance for closeness
+        return target_speed
+    elif current_speed < target_speed:
+        return min(current_speed + step, target_speed)
+    else:
+        return max(current_speed - step, target_speed)
 
 # main function to control the robot wheels
 # With Simple displacement-controlled function installed.
@@ -44,9 +52,12 @@ def move_robot():
                 if auto_motion == 'forward':
                     left_encoder.reset()
                     right_encoder.reset()
+                    target_speed = 0.6
                     while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
-                        pibot.value = (0.6, 0.6)
-                        # Breaking logic if the encoder value goes beyond expected range
+                        current_left_speed = gradual_speed_change(current_left_speed, target_speed)
+                        current_right_speed = gradual_speed_change(current_right_speed, target_speed)
+                        pibot.value = (current_left_speed, current_right_speed)
+                        
                         if (left_encoder.value + right_encoder.value) > (right_disp + left_disp + 3):
                             break
                     pibot.value = (0, 0)
@@ -55,13 +66,17 @@ def move_robot():
                 elif auto_motion == 'backward':
                     left_encoder.reset()
                     right_encoder.reset()
+                    target_speed = -0.6
                     while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
-                        pibot.value = (-0.6, -0.6)
-                        # Breaking logic if the encoder value goes beyond expected range
+                        current_left_speed = gradual_speed_change(current_left_speed, target_speed)
+                        current_right_speed = gradual_speed_change(current_right_speed, target_speed)
+                        pibot.value = (current_left_speed, current_right_speed)
+                        
                         if (left_encoder.value + right_encoder.value) > (abs(right_disp + left_disp) + 3):
                             break
                     pibot.value = (0, 0)
                     print(auto_motion, "Value", left_encoder.value, right_encoder.value)
+
 
                 elif auto_motion == 'turning':
                     left_encoder.reset()
@@ -72,14 +87,14 @@ def move_robot():
                         # Because moving front is more powerful than moving backward
                         # we have to take a look that which wheel is moving backward, and add more speed to it.
                         if left_disp > 0:
-                            ls = 0.75
+                            ls = gradual_speed_change(0.75)
                         else:
-                            ls = -0.7
+                            ls = gradual_speed_change(-0.7)
                         
                         if right_disp > 0:
-                            rs = 0.75
+                            rs = gradual_speed_change(0.75)
                         else:
-                            rs = -0.7
+                            rs = gradual_speed_change(-0.7)
 
                         pibot.value = (ls, rs)
                         # Breaking logic if the encoder value goes beyond expected range
