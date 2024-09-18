@@ -88,8 +88,8 @@ def move_robot():
                     ls, rs = 0, 0  # Initialize speeds
                     
                     # Set initial PID controllers for both wheels
-                    pid_left = PID(1, 0.15, 0.1, setpoint=abs(left_disp), output_limits=(-0.7, 0.7))
-                    pid_right = PID(1, 0.15, 0.1, setpoint=abs(right_disp), output_limits=(-0.7, 0.7))
+                    pid_left = PID(1, 0.15, 0.12, setpoint=abs(left_disp), output_limits=(-0.7, 0.7))
+                    pid_right = PID(1, 0.15, 0.12, setpoint=abs(right_disp), output_limits=(-0.7, 0.7))
                     
                     tolerance = 1  # Tolerance in encoder counts for stopping
                     slow_down_distance = 10  # Distance (in encoder counts) to start slowing down
