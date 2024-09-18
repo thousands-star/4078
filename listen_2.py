@@ -88,8 +88,8 @@ def move_robot():
                     ls, rs = 0, 0  # Initialize speeds
 
                     # Set up PID controllers for both wheels
-                    pid_left = PID(kp, ki, kd, setpoint=abs(left_disp), output_limits=(-1, 1))
-                    pid_right = PID(kp, ki, kd, setpoint=abs(right_disp), output_limits=(-1, 1))
+                    pid_left = PID(1, 0.01, 0.01, setpoint=abs(left_disp), output_limits=(-1, 1))
+                    pid_right = PID(1, 0.01, 0.01, setpoint=abs(right_disp), output_limits=(-1, 1))
 
                     # Main loop to handle turning with PID control
                     while True:
