@@ -26,7 +26,7 @@ class Encoder(object):
         return self._value
     
 # Gradual acceleration and deceleration
-def gradual_speed_change(current_speed, target_speed, step=0.05):
+def gradual_speed_change(current_speed, target_speed, step=0.005):
     if abs(current_speed - target_speed) <= 0.01:  # Tolerance for closeness
         return target_speed
     elif current_speed < target_speed:
