@@ -92,7 +92,7 @@ def move_robot():
                     pid_right = PID(1.5, 0.25, 0.1, setpoint=abs(right_disp), output_limits=(-0.7, 0.7))
                     
                     tolerance = 1  # Tolerance in encoder counts for stopping
-                    slow_down_distance = 10  # Distance (in encoder counts) to start slowing down
+                    slow_down_distance = 0  # Distance (in encoder counts) to start slowing down
                     
                     # Main loop to handle turning with PID control
                     while True:
