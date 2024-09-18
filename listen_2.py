@@ -85,29 +85,41 @@ def move_robot():
                 elif auto_motion == 'turning':
                     left_encoder.reset()
                     right_encoder.reset()
-                    ls = 0
-                    rs = 0
+                    ls, rs = 0, 0  # Initialize speeds
 
-                    while ((abs(left_disp) - left_encoder.value) + (abs(right_disp) - right_encoder.value)) / 2 > 0:
-                        # Determine the direction for turning
-                        # Because moving front is more powerful than moving backward
-                        # we have to take a look that which wheel is moving backward, and add more speed to it.
-                        if left_disp > 0:
-                            ls = gradual_speed_change(ls, 0.75)
-                        else:
-                            ls = gradual_speed_change(ls, -0.7)
-                        
-                        if right_disp > 0:
-                            rs = gradual_speed_change(rs, 0.75)
-                        else:
-                            rs = gradual_speed_change(rs, -0.7)
+                    # Set up PID controllers for both wheels
+                    pid_left = PID(kp, ki, kd, setpoint=abs(left_disp), output_limits=(-1, 1))
+                    pid_right = PID(kp, ki, kd, setpoint=abs(right_disp), output_limits=(-1, 1))
 
+                    # Main loop to handle turning with PID control
+                    while True:
+                        # Get the current encoder values
+                        left_value = left_encoder.value
+                        right_value = right_encoder.value
+
+                        # Compute the PID output (speed adjustment) for each wheel
+                        ls = pid_left(left_value)
+                        rs = pid_right(right_value)
+
+                        # Adjust direction for turning
+                        if left_disp < 0:
+                            ls = -abs(ls)  # Reverse for left wheel if turning left
+                        if right_disp < 0:
+                            rs = -abs(rs)  # Reverse for right wheel if turning right
+
+                        # Set the robot motor speeds
                         pibot.value = (ls, rs)
-                        # Breaking logic if the encoder value goes beyond expected range
-                        if left_encoder.value > abs(left_disp) or right_encoder.value > abs(right_disp):
+
+                        # Stopping condition: Check if both wheels have reached their target displacement
+                        if left_value >= abs(left_disp) and right_value >= abs(right_disp):
                             break
+
+                        # Add a small delay to avoid busy-waiting
+                        time.sleep(0.01)
+
+                    # Stop the robot after completing the turn
                     pibot.value = (0, 0)
-                    print(auto_motion, "Value", left_encoder.value, right_encoder.value)
+                    print(f"Turn completed: Left encoder = {left_value}, Right encoder = {right_value}")
 
                 # Once the command is executed, mark auto_motion as 'stop'
                 auto_motion = 'stop'
