@@ -86,16 +86,28 @@ def move_robot():
                     left_encoder.reset()
                     right_encoder.reset()
                     ls, rs = 0, 0  # Initialize speeds
-
-                    # Set up PID controllers for both wheels
-                    pid_left = PID(0.5, 0.01, 0.05, setpoint=abs(left_disp), output_limits=(-0.8, 0.8))
-                    pid_right = PID(0.5, 0.01, 0.05, setpoint=abs(right_disp), output_limits=(-0.8, 0.8))
-
+                    
+                    # Set initial PID controllers for both wheels
+                    pid_left = PID(1, 0.1, 0.05, setpoint=abs(left_disp), output_limits=(-0.8, 0.8))
+                    pid_right = PID(1, 0.1, 0.05, setpoint=abs(right_disp), output_limits=(-0.8, 0.8))
+                    
+                    tolerance = 1  # Tolerance in encoder counts for stopping
+                    slow_down_distance = 10  # Distance (in encoder counts) to start slowing down
+                    
                     # Main loop to handle turning with PID control
                     while True:
                         # Get the current encoder values
                         left_value = left_encoder.value
                         right_value = right_encoder.value
+
+                        # Calculate how far each wheel is from the target
+                        left_error = abs(left_disp) - left_value
+                        right_error = abs(right_disp) - right_value
+
+                        # Start slowing down when close to the target
+                        if left_error < slow_down_distance or right_error < slow_down_distance:
+                            pid_left.output_limits = (-0.4, 0.4)  # Reduce speed limits when close to target
+                            pid_right.output_limits = (-0.4, 0.4)
 
                         # Compute the PID output (speed adjustment) for each wheel
                         ls = pid_left(left_value)
@@ -111,7 +123,7 @@ def move_robot():
                         pibot.value = (ls, rs)
 
                         # Stopping condition: Check if both wheels have reached their target displacement
-                        if left_value >= abs(left_disp) and right_value >= abs(right_disp):
+                        if left_error < tolerance and right_error < tolerance:
                             break
 
                         # Add a small delay to avoid busy-waiting
