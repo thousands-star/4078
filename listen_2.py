@@ -223,7 +223,7 @@ def mode():
     global driving_mode
     mode = float(request.args.get('driving_mode'))
     driving_mode = mode
-    return mode
+    return str(mode)
 
 
 # Constants
