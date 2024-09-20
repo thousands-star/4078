@@ -39,9 +39,37 @@ def gradual_speed_change(current_speed, target_speed, step=0.01):
 def move_robot():
     global use_pid, left_speed, right_speed, motion
     global command_queue, left_disp, right_disp, auto_motion
+    global calibrate
     flag_new_pid_cycle = True
 
     while True:
+        if calibrate:
+            disp_for_one_meter = round(1/0.00534)
+            
+            for bot_speed in range(1,0.1,-0.05):
+                not_moving = False
+                left_encoder.reset()
+                right_encoder.reset()
+                startTime = time.time()
+                while(left_encoder.value < disp_for_one_meter or right_disp < disp_for_one_meter): 
+                    try:
+                        pibot.value = (bot_speed,bot_speed)
+                    except KeyboardInterrupt:
+                        not_moving = True
+                        break
+                
+                pibot.value = (0,0)
+                dt = time.time() - startTime
+                world_speed = 1 / dt
+                scale = world_speed / bot_speed
+                if(not_moving is True):
+                    print(f"for bot speed {bot_speed}, the robot is not moving")
+                else:
+                    print(f"for bot speed {bot_speed}, take {dt} to finish 1m, scale = {scale}")
+
+
+            calibrate = False
+            continue
         # Autonomous Driving (driving_mode == 1)
         if driving_mode == 1:
             if command_queue:
@@ -237,6 +265,13 @@ def mode():
     driving_mode = mode
     return str(mode)
 
+@app.route('/calibrate')
+def calibrate():
+    global calibrate
+    if(calibrate == False):
+        calibrate = True
+    
+
 
 # Constants
 # Pin Number
@@ -265,6 +300,7 @@ motion = ''
 auto_motion = ''
 driving_mode = 0
 command_queue = []
+calibrate = False
 
 # Initialize the PiCamera
 picam2 = Picamera2()
