@@ -270,7 +270,7 @@ def calibrate():
     global calibrate
     if(calibrate == False):
         calibrate = True
-    
+    return "Calibrating"
 
 
 # Constants
