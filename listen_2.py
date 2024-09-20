@@ -44,32 +44,38 @@ def move_robot():
 
     while True:
         if calibrate:
-            disp_for_one_meter = round(1/0.00534)
-            
-            for bot_speed in range(1,0.1,-0.05):
+            disp_for_one_meter = round(1 / 0.00534)  # Distance equivalent for 1 meter
+
+            bot_speed = 1.0
+            while bot_speed > 0.1:
                 not_moving = False
                 left_encoder.reset()
                 right_encoder.reset()
                 startTime = time.time()
-                while(left_encoder.value < disp_for_one_meter or right_disp < disp_for_one_meter): 
+
+                # Loop until either encoder reaches the distance for one meter
+                while left_encoder.value < disp_for_one_meter and right_encoder.value < disp_for_one_meter:
                     try:
-                        pibot.value = (bot_speed,bot_speed)
+                        pibot.value = (bot_speed, bot_speed)  # Set the speed for both wheels
                     except KeyboardInterrupt:
                         not_moving = True
                         break
-                
-                pibot.value = (0,0)
-                dt = time.time() - startTime
-                world_speed = 1 / dt
-                scale = world_speed / bot_speed
-                if(not_moving is True):
-                    print(f"for bot speed {bot_speed}, the robot is not moving")
+
+                pibot.value = (0, 0)  # Stop the bot
+                dt = time.time() - startTime  # Time taken to travel 1 meter
+                world_speed = 1 / dt  # World speed in meters per second
+                scale = world_speed / bot_speed  # Scale factor for the bot
+
+                if not_moving:
+                    print(f"For bot speed {bot_speed:.2f}, the robot is not moving")
                 else:
-                    print(f"for bot speed {bot_speed}, take {dt} to finish 1m, scale = {scale}")
+                    print(f"For bot speed {bot_speed:.2f}, it took {dt:.2f} seconds to finish 1 meter, scale = {scale:.2f}")
 
+                # Decrement bot speed by 0.05 for the next iteration
+                bot_speed -= 0.05
 
-            calibrate = False
-            continue
+                calibrate = False
+                continue
         # Autonomous Driving (driving_mode == 1)
         if driving_mode == 1:
             if command_queue:
