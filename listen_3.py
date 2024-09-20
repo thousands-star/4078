@@ -133,7 +133,7 @@ def capture_image():
 @app.route('/move')
 def move():
     global left_speed, right_speed,  motion
-    left_speed, right_speed, dt = float(request.args.get('left_speed')), float(request.args.get('right_speed'), float(request.args.get('dt')))
+    left_speed, right_speed, dt = float(request.args.get('left_speed')), float(request.args.get('right_speed')), float(request.args.get('dt'))
     if (left_speed == 0 and right_speed == 0):
         motion = 'stop'
     elif (left_speed != right_speed ):
@@ -145,7 +145,6 @@ def move():
     command_queue.append([motion, left_speed, right_speed, dt])
     return motion
     
-    # if 'time' in request.args:
 
 # The function to switch mode
 @app.route('/mode')
