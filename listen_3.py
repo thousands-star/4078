@@ -70,6 +70,7 @@ def move_robot():
                     # Set the robot's wheel velocities using the adjusted speeds
                     pibot.value = (adjusted_left_speed, adjusted_right_speed)
 
+                    print(time.time() - start_time)
                     # Small delay to avoid busy-waiting
                     time.sleep(0.01)
                 
