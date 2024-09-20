@@ -76,7 +76,7 @@ def move_robot():
                 bot_speed -= 0.05
             
             bot_speed = 1.0
-            print("\nBackward calibration")
+            print("Backward calibration")
             while bot_speed > 0.1:
                 not_moving = False
                 left_encoder.reset()
@@ -86,7 +86,7 @@ def move_robot():
                 # Loop until either encoder reaches the distance for one meter
                 while left_encoder.value < disp_for_one_meter and right_encoder.value < disp_for_one_meter:
                     try:
-                        pibot.value = (-bot_speed, -bot_speed)  # Set the speed for both wheels
+                        pibot.value = (bot_speed, bot_speed)  # Set the speed for both wheels
                     except KeyboardInterrupt:
                         not_moving = True
                         break
