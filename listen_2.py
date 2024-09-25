@@ -37,7 +37,7 @@ def gradual_speed_change(current_speed, target_speed, step=0.01):
 # main function to control the robot wheels
 # With Simple displacement-controlled function installed.
 def move_robot_auto():
-    global command_queue, left_disp, right_disp, auto_motion
+    global command_queue
     global calibrate
     tolerance = 3
 
@@ -45,70 +45,49 @@ def move_robot_auto():
         if calibrate:
             disp_for_one_meter = round(1 / 0.00534)  # Distance equivalent for 1 meter
 
-            bot_speed = 1.0
+            botSpeed = [0.8, 0.4]
+            T = 0
             print("Forward calibration")
-            while bot_speed > 0.1:
-                not_moving = False
-                left_encoder.reset()
-                right_encoder.reset()
-                startTime = time.time()
+            for bot_speed in botSpeed:
+                for i in range(10):
+                    not_moving = False
+                    left_encoder.reset()
+                    right_encoder.reset()
+                    startTime = time.time()
 
-                # Loop until either encoder reaches the distance for one meter
-                while left_encoder.value < disp_for_one_meter and right_encoder.value < disp_for_one_meter:
-                    try:
-                        pibot.value = (bot_speed, bot_speed)  # Set the speed for both wheels
-                    except KeyboardInterrupt:
-                        not_moving = True
-                        break
+                    # Loop until either encoder reaches the distance for one meter
+                    while left_encoder.value < disp_for_one_meter and right_encoder.value < disp_for_one_meter:
+                        try:
+                            pibot.value = (bot_speed, bot_speed)  # Set the speed for both wheels
+                        except KeyboardInterrupt:
+                            not_moving = True
+                            break
 
-                pibot.value = (0, 0)  # Stop the bot
-                dt = time.time() - startTime  # Time taken to travel 1 meter
-                world_speed = 1 / dt  # World speed in meters per second
-                scale = world_speed / bot_speed  # Scale factor for the bot
-
-                if not_moving:
-                    print(f"For bot speed {bot_speed:.2f}, the robot is not moving")
-                else:
-                    print(f"bot speed {bot_speed:.2f},  it took {dt:.2f} seconds for 1 meter, real speed {(1/dt):.2f} scale = {scale:.2f}")
-
-                # Decrement bot speed by 0.05 for the next iteration
-                bot_speed -= 0.05
-            
-            bot_speed = 1.0
-            print("Backward calibration")
-            while bot_speed > 0.1:
-                not_moving = False
-                left_encoder.reset()
-                right_encoder.reset()
-                startTime = time.time()
-
-                # Loop until either encoder reaches the distance for one meter
-                while left_encoder.value < disp_for_one_meter and right_encoder.value < disp_for_one_meter:
-                    try:
-                        pibot.value = (bot_speed, bot_speed)  # Set the speed for both wheels
-                    except KeyboardInterrupt:
-                        not_moving = True
-                        break
-
-                pibot.value = (0, 0)  # Stop the bot
-                dt = time.time() - startTime  # Time taken to travel 1 meter
-                world_speed = 1 / dt  # World speed in meters per second
-                scale = world_speed / bot_speed  # Scale factor for the bot
-
-                if not_moving:
-                    print(f"For bot speed {bot_speed:.2f}, the robot is not moving")
-                else:
-                    print(f"bot speed {bot_speed:.2f},  it took {dt:.2f} seconds for 1 meter, real speed {(1/dt):.2f} scale = {scale:.2f}")
-
-                # Decrement bot speed by 0.05 for the next iteration
-                bot_speed -= 0.05
-
+                    pibot.value = (0, 0)  # Stop the bot
+                    dt = time.time() - startTime  # Time taken to travel 1 meter
+                    world_speed = 1 / dt  # World speed in meters per second
+                    scale = world_speed / bot_speed  # Scale factor for the bot
+                    T = T + dt
+                    if not_moving:
+                        print(f"For bot speed {bot_speed:.2f}, the robot is not moving")
+                    else:
+                        print(f"bot speed {bot_speed:.2f},  it took {dt:.2f} seconds for 1 meter, real speed {(1/dt):.2f} scale = {scale:.2f}")
+                    print("waiting for 5 second for next round")
+                    time.sleep(5)
+                T = T / 10
+                world_speed = 1 / T
+                scale = world_speed / bot_speed
+                print(f"bot speed {bot_speed:.2f},  average {T:.2f} seconds for 1 meter, real speed {(1/T):.2f} scale = {scale:.2f}")
+                
             calibrate = False
 
         # Autonomous Driving (driving_mode == 1)
         if command_queue:
             # Fetch the first command from the queue
-            auto_motion, left_disp, right_disp = command_queue.pop(0)
+            auto_motion, desired_lin_disp, desired_ang_disp = command_queue.pop(0)
+            lin_disp_error = desired_lin_disp
+            tol = 0.001
+
 
             # Execute the command based on auto_motion
             if auto_motion in ['forward', 'backward']:
@@ -125,7 +104,8 @@ def move_robot_auto():
                 tolerance = 3  # Tolerance for displacement
                 current_left_speed = 0
                 current_right_speed = 0
-                
+                left_disp, right_disp = lin2lr(lin_disp_error)
+
                 # Main control loop for forward/backward motion with PID
                 while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > tolerance:
                     # Get the current encoder values
@@ -147,8 +127,15 @@ def move_robot_auto():
                     if (left_encoder.value + right_encoder.value) > (right_disp + left_disp + tolerance):
                         break
 
-                    # Small delay to avoid busy-waiting
-                    time.sleep(0.01)
+                ld, _ = lr2linang(target_sign*left_encoder.value,target_sign*right_encoder.value)
+                lin_disp_error = lin_disp_error - ld
+                pibot.value = (0,0)
+
+                while(lin_disp_error<tol):
+                    st = time.time()
+                    pibot.value = (0.4, 0.4)
+                    dt = time.time()-st
+                    lin_disp_error = lin_disp_error - current_right_speed * scale * dt
 
                 pibot.value = (0, 0)  # Stop the robot
                 print(auto_motion, "Value", left_encoder.value, right_encoder.value)
@@ -291,21 +278,21 @@ def move():
 # The main function to enable autonomous driving
 @app.route('/disp')
 def disp():
-    global left_disp, right_disp, auto_motion, command_queue
+    global lin_disp, ang_disp, auto_motion, command_queue
 
-    left_disp, right_disp = float(request.args.get('left_disp')), float(request.args.get('right_disp'))
-    print("Value",left_disp,right_disp)
-    if (left_disp == 0 and right_disp == 0):
+    lin_disp, ang_disp = float(request.args.get('lin_disp')), float(request.args.get('ang_disp'))
+    print("Linear Disp:" + str(lin_disp) + ", Angular disp" + str(right_disp))
+    if (lin_disp == 0 and ang_disp == 0):
         auto_motion = 'stop'
         command_queue = []
-    elif (left_disp != right_disp ):
+    elif (ang_disp != 0):
         auto_motion = 'turning'
-    elif (left_disp > 0 and right_disp > 0):
+    elif (lin_disp > 0):
         auto_motion = 'forward'
-    elif (left_disp < 0 and right_disp < 0):
+    elif (lin_disp < 0):
         auto_motion = 'backward'
 
-    command_queue.append([auto_motion, left_disp, right_disp])
+    command_queue.append([auto_motion, lin_disp, ang_disp])
 
     return auto_motion
 
@@ -329,6 +316,32 @@ def set_radius():
     global radius
     radius = float(request.args.get('radius'))
     return str(radius) 
+
+def lin2lr(lin_disp):
+    unit_disp = round(lin_disp / 0.00534)
+    return unit_disp, unit_disp
+
+def ang2lr(ang_disp):
+    global radius
+    unit_disp = (ang_disp / 180 * 3.1415926 * radius) / 0.00534
+    unit_disp = round(unit_disp)
+    if(ang_disp > 0):
+        target_sign = 1
+    else:
+        target_sign = -1
+    return target_sign * unit_disp * -1, target_sign * unit_disp 
+
+def lr2linang(l_disp, r_disp):
+    global radius
+    # Calculate linear displacement as the average of left and right displacements
+    linear_disp = (l_disp + r_disp) / 2
+    linear_disp = linear_disp * 0.00534
+    
+    # Calculate angular displacement as the difference divided by the distance between wheels
+    angular_disp = (r_disp - l_disp) / (2 * radius)
+    angular_disp = angular_disp * 180 / 3.1415926
+    
+    return linear_disp, angular_disp
 
 
 # Constants
@@ -354,11 +367,13 @@ ki = 0
 kd = 0
 left_speed, right_speed = 0, 0
 left_disp, right_disp = 0, 0
+lin_disp, ang_disp = 0, 0
 motion = ''
 auto_motion = ''
 driving_mode = 0
 radius = 0.06
 command_queue = []
+scale = 0.93
 calibrate = False
 
 # Initialize the PiCamera
