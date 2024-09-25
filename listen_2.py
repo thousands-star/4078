@@ -338,7 +338,7 @@ def lr2linang(l_disp, r_disp):
     linear_disp = linear_disp * 0.00534
     
     # Calculate angular displacement as the difference divided by the distance between wheels
-    angular_disp = (r_disp - l_disp) / (2 * radius)
+    angular_disp = (r_disp - l_disp) * 0.00534 / (2 * radius)
     angular_disp = angular_disp * 180 / 3.1415926
     
     return linear_disp, angular_disp
