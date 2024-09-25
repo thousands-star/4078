@@ -40,6 +40,7 @@ def move_robot_auto():
     global command_queue
     global radius
     global calibrate
+    global kp,ki,kd
     tolerance = 3
 
     while True:
@@ -142,8 +143,8 @@ def move_robot_auto():
                 
                 left_disp, right_disp = ang2lr(desired_ang_disp)
                 # Set initial PID controllers for both wheels
-                pid_left = PID(3, 0.6, 0.3, setpoint=abs(left_disp), output_limits=(-0.95, 0.95))
-                pid_right = PID(3, 0.6, 0.3, setpoint=abs(right_disp), output_limits=(-0.95, 0.95))
+                pid_left = PID(kp, ki, kd, setpoint=abs(left_disp), output_limits=(-0.95, 0.95))
+                pid_right = PID(kp, ki, kd, setpoint=abs(right_disp), output_limits=(-0.95, 0.95))
                 
                 tolerance = 1  # Tolerance in encoder counts for stopping
                 slow_down_distance = 0  # Distance (in encoder counts) to start slowing down
