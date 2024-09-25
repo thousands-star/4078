@@ -180,14 +180,14 @@ def move_robot_auto():
                     if (left_error + right_error) / 2 < tolerance:
                         break
 
-                    _, ad = lr2linang(left_value,right_value)
-                    ang_disp_error = ang_disp_error - ad
 
-                    print("Angle error:" + str(ang_disp_error))
+                _, ad = lr2linang(left_value,right_value)
+                ang_disp_error = ang_disp_error - ad
 
-                    pibot.value = (0, 0)
+                print("Angle error:" + str(ang_disp_error))
+                pibot.value = (0, 0)
                     # Add a small delay to avoid busy-waiting
-                    time.sleep(0.01)
+                time.sleep(0.01)
 
                 print(f"Turn completed: Left encoder = {left_value}, Right encoder = {right_value}")
 
