@@ -183,31 +183,8 @@ def move_robot_auto():
                     _, ad = lr2linang(left_value,right_value)
                     ang_disp_error = ang_disp_error - ad
 
-                    while abs(ang_disp_error) > 1:  # Continue while angular error is greater than 1 degree or 1 radian (as required)
-                        st = time.time()
+                    print("Angle error:" + str(ang_disp_error))
 
-                        if ang_disp_error > 0:
-                            # Turn left to fix (counter clockwise)
-                            pibot.value = (-0.8, 0.8)  # One wheel forward, the other backward for turning
-                            sign = 1
-                        elif ang_disp_error < 0:
-                            # Turn right (clockwise)
-                            pibot.value = (0.8, -0.8)  # Reverse one wheel, move the other forward for turning
-                            sign = -1
-
-                        # Time spent turning
-                        dt = time.time() - st
-
-                        s = sign*0.8*0.69*dt
-                        theta_rad = s / radius
-                        theta_deg = theta_rad / 3.1415926 * 180
-
-
-                        # Update ang_disp_error based on how much time has passed and the angular velocity
-                        ang_disp_error -= theta_deg  # Example calculation, adjust based on robot's turning rate
-
-                        # Brief delay to avoid busy-waiting
-                        time.sleep(0.01)
                     pibot.value = (0, 0)
                     # Add a small delay to avoid busy-waiting
                     time.sleep(0.01)
