@@ -142,8 +142,8 @@ def move_robot_auto():
                 
                 left_disp, right_disp = ang2lr(desired_ang_disp)
                 # Set initial PID controllers for both wheels
-                pid_left = PID(2.5, 0.5, 0.2, setpoint=abs(left_disp), output_limits=(-0.9, 0.9))
-                pid_right = PID(2.5, 0.5, 0.2, setpoint=abs(right_disp), output_limits=(-0.9, 0.9))
+                pid_left = PID(3, 0.6, 0.3, setpoint=abs(left_disp), output_limits=(-0.95, 0.95))
+                pid_right = PID(3, 0.6, 0.3, setpoint=abs(right_disp), output_limits=(-0.95, 0.95))
                 
                 tolerance = 1  # Tolerance in encoder counts for stopping
                 slow_down_distance = 0  # Distance (in encoder counts) to start slowing down
