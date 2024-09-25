@@ -45,10 +45,10 @@ def move_robot_auto():
         if calibrate:
             disp_for_one_meter = round(1 / 0.00534)  # Distance equivalent for 1 meter
 
-            botSpeed = [0.8, 0.4]
-            T = 0
+            botSpeed = [0.6]
             print("Forward calibration")
             for bot_speed in botSpeed:
+                T = 0
                 for i in range(10):
                     not_moving = False
                     left_encoder.reset()
@@ -78,7 +78,7 @@ def move_robot_auto():
                 world_speed = 1 / T
                 scale = world_speed / bot_speed
                 print(f"bot speed {bot_speed:.2f},  average {T:.2f} seconds for 1 meter, real speed {(1/T):.2f} scale = {scale:.2f}")
-                
+
             calibrate = False
 
         # Autonomous Driving (driving_mode == 1)
@@ -133,7 +133,7 @@ def move_robot_auto():
 
                 while(lin_disp_error<tol):
                     st = time.time()
-                    pibot.value = (0.4, 0.4)
+                    pibot.value = (0.8, 0.8)
                     dt = time.time()-st
                     lin_disp_error = lin_disp_error - current_right_speed * scale * dt
 
