@@ -38,6 +38,7 @@ def gradual_speed_change(current_speed, target_speed, step=0.01):
 # With Simple displacement-controlled function installed.
 def move_robot_auto():
     global command_queue
+    global radius
     global calibrate
     tolerance = 3
 
@@ -86,6 +87,7 @@ def move_robot_auto():
             # Fetch the first command from the queue
             auto_motion, desired_lin_disp, desired_ang_disp = command_queue.pop(0)
             lin_disp_error = desired_lin_disp
+            ang_disp_error = desired_ang_disp
             tol = 0.001
 
             # Execute the command based on auto_motion
@@ -129,13 +131,6 @@ def move_robot_auto():
 
                 ld, _ = lr2linang(target_sign*left_encoder.value,target_sign*right_encoder.value)
                 lin_disp_error = lin_disp_error - ld
-                pibot.value = (0,0)
-
-                # while(abs(lin_disp_error)<tol):
-                #     st = time.time()
-                #     pibot.value = (target_sign * 0.8, target_sign * 0.8)
-                #     dt = time.time()-st
-                #     lin_disp_error = lin_disp_error - current_right_speed * 0.69 * dt
 
                 pibot.value = (0, 0)  # Stop the robot
                 print(auto_motion, "Value", left_encoder.value, right_encoder.value)
@@ -145,6 +140,7 @@ def move_robot_auto():
                 right_encoder.reset()
                 ls, rs = 0, 0  # Initialize speeds
                 
+                left_disp, right_disp = ang2lr(desired_ang_disp)
                 # Set initial PID controllers for both wheels
                 pid_left = PID(1.5, 0.25, 0.1, setpoint=abs(left_disp), output_limits=(-0.7, 0.7))
                 pid_right = PID(1.5, 0.25, 0.1, setpoint=abs(right_disp), output_limits=(-0.7, 0.7))
@@ -184,11 +180,38 @@ def move_robot_auto():
                     if (left_error + right_error) / 2 < tolerance:
                         break
 
+                    _, ad = lr2linang(left_value,right_value)
+                    ang_disp_error = ang_disp_error - ad
+
+                    while abs(ang_disp_error) > 1:  # Continue while angular error is greater than 1 degree or 1 radian (as required)
+                        st = time.time()
+
+                        if ang_disp_error > 0:
+                            # Turn left to fix (counter clockwise)
+                            pibot.value = (-0.8, 0.8)  # One wheel forward, the other backward for turning
+                            sign = 1
+                        elif ang_disp_error < 0:
+                            # Turn right (clockwise)
+                            pibot.value = (0.8, -0.8)  # Reverse one wheel, move the other forward for turning
+                            sign = -1
+
+                        # Time spent turning
+                        dt = time.time() - st
+
+                        s = sign*0.8*0.69*dt
+                        theta_rad = s / radius
+                        theta_deg = theta_rad / 3.1415926 * 180
+
+
+                        # Update ang_disp_error based on how much time has passed and the angular velocity
+                        ang_disp_error -= theta_deg  # Example calculation, adjust based on robot's turning rate
+
+                        # Brief delay to avoid busy-waiting
+                        time.sleep(0.01)
+                    pibot.value = (0, 0)
                     # Add a small delay to avoid busy-waiting
                     time.sleep(0.01)
 
-                # Stop the robot after completing the turn
-                pibot.value = (0, 0)
                 print(f"Turn completed: Left encoder = {left_value}, Right encoder = {right_value}")
 
             # Once the command is executed, mark auto_motion as 'stop'
