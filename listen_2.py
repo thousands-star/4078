@@ -329,7 +329,7 @@ def lin2lr(lin_disp):
 def ang2lr(ang_disp):
     global radius
     unit_disp = (ang_disp / 180 * 3.1415926 * radius) / 0.00534
-    unit_disp = round(unit_disp)
+    unit_disp = round(abs(unit_disp))
     if(ang_disp > 0):
         target_sign = 1
     else:
