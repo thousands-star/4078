@@ -88,7 +88,6 @@ def move_robot_auto():
             lin_disp_error = desired_lin_disp
             tol = 0.001
 
-
             # Execute the command based on auto_motion
             if auto_motion in ['forward', 'backward']:
                 left_encoder.reset()
@@ -98,7 +97,7 @@ def move_robot_auto():
                 target_sign = 1 if auto_motion == 'forward' else -1
 
                 left_disp, right_disp = lin2lr(lin_disp_error)
-                
+
                 # Set PID controllers for both wheels
                 pid_left = PID(1.5, 0.25, 0.1, setpoint=left_disp, output_limits=(-0.6, 0.6))
                 pid_right = PID(1.5, 0.25, 0.1, setpoint=right_disp, output_limits=(-0.6, 0.6))
@@ -106,7 +105,6 @@ def move_robot_auto():
                 tolerance = 3  # Tolerance for displacement
                 current_left_speed = 0
                 current_right_speed = 0
-                
 
                 # Main control loop for forward/backward motion with PID
                 while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > tolerance:
@@ -320,7 +318,7 @@ def set_radius():
     return str(radius) 
 
 def lin2lr(lin_disp):
-    unit_disp = round(lin_disp / 0.00534)
+    unit_disp = abs(round(lin_disp / 0.00534))
     return unit_disp, unit_disp
 
 def ang2lr(ang_disp):
