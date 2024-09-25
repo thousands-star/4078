@@ -97,6 +97,8 @@ def move_robot_auto():
                 # Set the target speeds based on direction (positive for forward, negative for backward)
                 target_sign = 1 if auto_motion == 'forward' else -1
 
+                left_disp, right_disp = lin2lr(lin_disp_error)
+                
                 # Set PID controllers for both wheels
                 pid_left = PID(1.5, 0.25, 0.1, setpoint=left_disp, output_limits=(-0.6, 0.6))
                 pid_right = PID(1.5, 0.25, 0.1, setpoint=right_disp, output_limits=(-0.6, 0.6))
@@ -104,7 +106,7 @@ def move_robot_auto():
                 tolerance = 3  # Tolerance for displacement
                 current_left_speed = 0
                 current_right_speed = 0
-                left_disp, right_disp = lin2lr(lin_disp_error)
+                
 
                 # Main control loop for forward/backward motion with PID
                 while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > tolerance:
@@ -135,7 +137,7 @@ def move_robot_auto():
                     st = time.time()
                     pibot.value = (0.8, 0.8)
                     dt = time.time()-st
-                    lin_disp_error = lin_disp_error - current_right_speed * scale * dt
+                    lin_disp_error = lin_disp_error - current_right_speed * 0.69 * dt
 
                 pibot.value = (0, 0)  # Stop the robot
                 print(auto_motion, "Value", left_encoder.value, right_encoder.value)
