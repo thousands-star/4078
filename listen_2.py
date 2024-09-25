@@ -142,6 +142,7 @@ def move_robot_auto():
                 ls, rs = 0, 0  # Initialize speeds
                 
                 left_disp, right_disp = ang2lr(desired_ang_disp)
+                print("Left_disp:" + str(left_disp) + "Right_disp" + str(right_disp))
                 # Set initial PID controllers for both wheels
                 pid_left = PID(kp, ki, kd, setpoint=abs(left_disp), output_limits=(-0.95, 0.95))
                 pid_right = PID(kp, ki, kd, setpoint=abs(right_disp), output_limits=(-0.95, 0.95))
@@ -377,9 +378,8 @@ lin_disp, ang_disp = 0, 0
 motion = ''
 auto_motion = ''
 driving_mode = 0
-radius = 0.06
+radius = 0.055
 command_queue = []
-scale = 0.93
 calibrate = False
 
 # Initialize the PiCamera
