@@ -180,8 +180,13 @@ def move_robot_auto():
                     if (left_error + right_error) / 2 < tolerance:
                         break
 
+                if left_disp > 0:
+                    sign = 1
+                else:
+                    sign = -1
 
-                _, ad = lr2linang(left_value,right_value)
+
+                _, ad = lr2linang(sign*left_value,-1*sign*right_value)
                 ang_disp_error = ang_disp_error - ad
 
                 print("Angle error:" + str(ang_disp_error))
