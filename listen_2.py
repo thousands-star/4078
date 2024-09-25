@@ -125,7 +125,7 @@ def move_robot():
                         pibot.value = (current_left_speed, current_right_speed)
                         
                         if (left_encoder.value + right_encoder.value) > (right_disp + left_disp + 3):
-                            break
+                            break   
                     pibot.value = (0, 0)
                     print(auto_motion, "Value", left_encoder.value, right_encoder.value)
 
