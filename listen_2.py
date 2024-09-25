@@ -36,11 +36,10 @@ def gradual_speed_change(current_speed, target_speed, step=0.01):
 
 # main function to control the robot wheels
 # With Simple displacement-controlled function installed.
-def move_robot():
-    global use_pid, left_speed, right_speed, motion
+def move_robot_auto():
     global command_queue, left_disp, right_disp, auto_motion
     global calibrate
-    flag_new_pid_cycle = True
+    tolerance = 3
 
     while True:
         if calibrate:
@@ -107,131 +106,148 @@ def move_robot():
             calibrate = False
 
         # Autonomous Driving (driving_mode == 1)
-        if driving_mode == 1:
-            if command_queue:
-                # Fetch the first command from the queue
-                auto_motion, left_disp, right_disp = command_queue.pop(0)
+        if command_queue:
+            # Fetch the first command from the queue
+            auto_motion, left_disp, right_disp = command_queue.pop(0)
 
-                # Execute the command based on auto_motion
-                if auto_motion == 'forward':
-                    left_encoder.reset()
-                    right_encoder.reset()
-                    target_speed = 0.6
-                    current_left_speed = 0
-                    current_right_speed = 0
-                    while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
-                        current_left_speed = gradual_speed_change(current_left_speed, target_speed)
-                        current_right_speed = gradual_speed_change(current_right_speed, target_speed)
-                        pibot.value = (current_left_speed, current_right_speed)
-                        
-                        if (left_encoder.value + right_encoder.value) > (right_disp + left_disp + 3):
-                            break   
-                    pibot.value = (0, 0)
-                    print(auto_motion, "Value", left_encoder.value, right_encoder.value)
+            # Execute the command based on auto_motion
+            if auto_motion in ['forward', 'backward']:
+                left_encoder.reset()
+                right_encoder.reset()
 
-                elif auto_motion == 'backward':
-                    left_encoder.reset()
-                    right_encoder.reset()
-                    current_left_speed = 0
-                    current_right_speed = 0
-                    target_speed = -0.6
-                    while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > 3:
-                        current_left_speed = gradual_speed_change(current_left_speed, target_speed)
-                        current_right_speed = gradual_speed_change(current_right_speed, target_speed)
-                        pibot.value = (current_left_speed, current_right_speed)
-                        
-                        if (left_encoder.value + right_encoder.value) > (abs(right_disp + left_disp) + 3):
-                            break
-                    pibot.value = (0, 0)
-                    print(auto_motion, "Value", left_encoder.value, right_encoder.value)
+                # Set the target speeds based on direction (positive for forward, negative for backward)
+                target_sign = 1 if auto_motion == 'forward' else -1
 
+                # Set PID controllers for both wheels
+                pid_left = PID(1.5, 0.25, 0.1, setpoint=left_disp, output_limits=(-0.6, 0.6))
+                pid_right = PID(1.5, 0.25, 0.1, setpoint=right_disp, output_limits=(-0.6, 0.6))
+                
+                tolerance = 3  # Tolerance for displacement
+                current_left_speed = 0
+                current_right_speed = 0
+                
+                # Main control loop for forward/backward motion with PID
+                while abs((left_disp + right_disp) / 2 - (left_encoder.value + right_encoder.value) / 2) > tolerance:
+                    # Get the current encoder values
+                    left_value = left_encoder.value
+                    right_value = right_encoder.value
 
-                elif auto_motion == 'turning':
-                    left_encoder.reset()
-                    right_encoder.reset()
-                    ls, rs = 0, 0  # Initialize speeds
-                    
-                    # Set initial PID controllers for both wheels
-                    pid_left = PID(1.5, 0.25, 0.1, setpoint=abs(left_disp), output_limits=(-0.7, 0.7))
-                    pid_right = PID(1.5, 0.25, 0.1, setpoint=abs(right_disp), output_limits=(-0.7, 0.7))
-                    
-                    tolerance = 1  # Tolerance in encoder counts for stopping
-                    slow_down_distance = 0  # Distance (in encoder counts) to start slowing down
-                    
-                    # Main loop to handle turning with PID control
-                    while True:
-                        # Get the current encoder values
-                        left_value = left_encoder.value
-                        right_value = right_encoder.value
+                    # Calculate PID output for both wheels
+                    left_speed = pid_left(left_value) * target_sign
+                    right_speed = pid_right(right_value) * target_sign
 
-                        # Calculate how far each wheel is from the target
-                        left_error = abs(left_disp) - left_value
-                        right_error = abs(right_disp) - right_value
+                    # Gradually adjust speeds using PID
+                    current_left_speed = gradual_speed_change(current_left_speed, left_speed)
+                    current_right_speed = gradual_speed_change(current_right_speed, right_speed)
 
-                        # Start slowing down when close to the target
-                        if left_error < slow_down_distance or right_error < slow_down_distance:
-                            pid_left.output_limits = (-0.4, 0.4)  # Reduce speed limits when close to target
-                            pid_right.output_limits = (-0.4, 0.4)
+                    # Set motor speeds
+                    pibot.value = (current_left_speed, current_right_speed)
 
-                        # Compute the PID output (speed adjustment) for each wheel
-                        ls = pid_left(left_value)
-                        rs = pid_right(right_value)
+                    # If both wheels have exceeded the target displacement, stop the robot
+                    if (left_encoder.value + right_encoder.value) > (right_disp + left_disp + tolerance):
+                        break
 
-                        # Adjust direction for turning
-                        if left_disp < 0:
-                            ls = -abs(ls)  # Reverse for left wheel if turning left
-                        if right_disp < 0:
-                            rs = -abs(rs)  # Reverse for right wheel if turning right
+                    # Small delay to avoid busy-waiting
+                    time.sleep(0.01)
 
-                        # Set the robot motor speeds
-                        pibot.value = (ls, rs)
+                pibot.value = (0, 0)  # Stop the robot
+                print(auto_motion, "Value", left_encoder.value, right_encoder.value)
 
-                        # Stopping condition: Check if both wheels have reached their target displacement
-                        if (left_error + right_error) / 2 < tolerance:
-                            break
+            elif auto_motion == 'turning':
+                left_encoder.reset()
+                right_encoder.reset()
+                ls, rs = 0, 0  # Initialize speeds
+                
+                # Set initial PID controllers for both wheels
+                pid_left = PID(1.5, 0.25, 0.1, setpoint=abs(left_disp), output_limits=(-0.7, 0.7))
+                pid_right = PID(1.5, 0.25, 0.1, setpoint=abs(right_disp), output_limits=(-0.7, 0.7))
+                
+                tolerance = 1  # Tolerance in encoder counts for stopping
+                slow_down_distance = 0  # Distance (in encoder counts) to start slowing down
+                
+                # Main loop to handle turning with PID control
+                while True:
+                    # Get the current encoder values
+                    left_value = left_encoder.value
+                    right_value = right_encoder.value
 
-                        # Add a small delay to avoid busy-waiting
-                        time.sleep(0.01)
+                    # Calculate how far each wheel is from the target
+                    left_error = abs(left_disp) - left_value
+                    right_error = abs(right_disp) - right_value
 
-                    # Stop the robot after completing the turn
-                    pibot.value = (0, 0)
-                    print(f"Turn completed: Left encoder = {left_value}, Right encoder = {right_value}")
+                    # Start slowing down when close to the target
+                    if left_error < slow_down_distance or right_error < slow_down_distance:
+                        pid_left.output_limits = (-0.4, 0.4)  # Reduce speed limits when close to target
+                        pid_right.output_limits = (-0.4, 0.4)
 
-                # Once the command is executed, mark auto_motion as 'stop'
-                auto_motion = 'stop'
-                # To ensure integrity of every command, directly execute next command would make the robot busy and which the effectiveness was affected.
-                time.sleep(0.1)
+                    # Compute the PID output (speed adjustment) for each wheel
+                    ls = pid_left(left_value)
+                    rs = pid_right(right_value)
 
-            else:
-                # If no commands are in the queue, pause the robot and wait
+                    # Adjust direction for turning
+                    if left_disp < 0:
+                        ls = -abs(ls)  # Reverse for left wheel if turning left
+                    if right_disp < 0:
+                        rs = -abs(rs)  # Reverse for right wheel if turning right
+
+                    # Set the robot motor speeds
+                    pibot.value = (ls, rs)
+
+                    # Stopping condition: Check if both wheels have reached their target displacement
+                    if (left_error + right_error) / 2 < tolerance:
+                        break
+
+                    # Add a small delay to avoid busy-waiting
+                    time.sleep(0.01)
+
+                # Stop the robot after completing the turn
                 pibot.value = (0, 0)
+                print(f"Turn completed: Left encoder = {left_value}, Right encoder = {right_value}")
 
-        # Teleoperating Mode (driving_mode == 0)
-        elif driving_mode == 0:
-            # Move the robot based on velocity commands
-            if not use_pid:
-                # Direct velocity control
-                pibot.value = (left_speed, right_speed)
-            else:
-                # PID-based control for teleoperation
-                if motion == 'stop' or motion == 'turning':
-                    pibot.value = (left_speed, right_speed)
-                    left_encoder.reset()
-                    right_encoder.reset()
-                    flag_new_pid_cycle = True          
-                else:
-                    left_speed, right_speed = abs(left_speed), abs(right_speed)
-                    if flag_new_pid_cycle:
-                        pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0, 1), starting_output=right_speed)
-                        flag_new_pid_cycle = False
-                    pid_right.setpoint = left_encoder.value
-                    right_speed = pid_right(right_encoder.value)
-                    if motion == 'forward': 
-                        pibot.value = (left_speed, right_speed)
-                    else: 
-                        pibot.value = (-left_speed, -right_speed)
+            # Once the command is executed, mark auto_motion as 'stop'
+            auto_motion = 'stop'
+            # To ensure integrity of every command, directly execute next command would make the robot busy and which the effectiveness was affected.
+            time.sleep(0.1)
+
+        else:
+            # If no commands are in the queue, pause the robot and wait
+            pibot.value = (0, 0)
+
+        if driving_mode == 0:
+            break
 
         # Small delay to avoid busy-waiting
+        time.sleep(0.005)
+
+def move_robot_manual():
+    global use_pid, left_speed, right_speed, motion
+    global kp, ki, kd
+    flag_new_pid_cycle = True
+
+    while True:
+        if not use_pid:
+            # Direct velocity control
+            pibot.value = (left_speed, right_speed)
+        else:
+            # PID-based control for teleoperation
+            if motion == 'stop' or motion == 'turning':
+                pibot.value = (left_speed, right_speed)
+                left_encoder.reset()
+                right_encoder.reset()
+                flag_new_pid_cycle = True          
+            else:
+                left_speed, right_speed = abs(left_speed), abs(right_speed)
+                if flag_new_pid_cycle:
+                    pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0, 1), starting_output=right_speed)
+                    flag_new_pid_cycle = False
+                pid_right.setpoint = left_encoder.value
+                right_speed = pid_right(right_encoder.value)
+                if motion == 'forward': 
+                    pibot.value = (left_speed, right_speed)
+                else: 
+                    pibot.value = (-left_speed, -right_speed)
+        if driving_mode == 1:
+            break
         time.sleep(0.005)
 
 
@@ -308,6 +324,12 @@ def calibrate():
         calibrate = True
     return "Calibrating"
 
+@app.route('/radius')
+def set_radius():
+    global radius
+    radius = float(request.args.get('radius'))
+    return str(radius) 
+
 
 # Constants
 # Pin Number
@@ -335,6 +357,7 @@ left_disp, right_disp = 0, 0
 motion = ''
 auto_motion = ''
 driving_mode = 0
+radius = 0.06
 command_queue = []
 calibrate = False
 
@@ -354,7 +377,10 @@ flask_thread.start()
 
 try:
     while True:
-        move_robot()
+        if driving_mode == 1:
+            move_robot_auto()
+        if driving_mode == 0:
+            move_robot_manual()
 except KeyboardInterrupt:
     pibot.stop()
     picam2.stop()
