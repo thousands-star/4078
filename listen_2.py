@@ -131,9 +131,9 @@ def move_robot_auto():
                 lin_disp_error = lin_disp_error - ld
                 pibot.value = (0,0)
 
-                while(lin_disp_error<tol):
+                while(abs(lin_disp_error)<tol):
                     st = time.time()
-                    pibot.value = (0.8, 0.8)
+                    pibot.value = (target_sign * 0.8, target_sign * 0.8)
                     dt = time.time()-st
                     lin_disp_error = lin_disp_error - current_right_speed * 0.69 * dt
 
