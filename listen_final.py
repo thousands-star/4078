@@ -29,106 +29,50 @@ class Encoder(object):
         
 def handle_mode0():
     """
-    for self-driving mode
+    Self-driving mode for linear movement with PID control.
     """
-    global use_pid, left_speed, right_speed
+    global use_pid, left_speed, right_speed, motion
     flag_new_pid_cycle = True
+    
     while True:
-        ### if not using pid, just move the wheels as commanded
         if not use_pid:
-            pibot.value = (left_speed, right_speed)          
-            # print('Value', left_encoder.value, right_encoder.value)
-        ### with pid, left wheel is set as reference, and right wheel will try to match the encoder counter of left wheel
-        ### pid only runs when robot moves forward or backward. Turning does not use pid
+            # Direct control without PID
+            pibot.value = (left_speed, right_speed) 
         else:
-            if (motion == 'stop') or (motion == 'turning'):
+            # PID for matching right wheel to the left wheel
+            if motion in ['stop', 'turning']:
+                # Reset PID if motion is stopped or turning
                 pibot.value = (left_speed, right_speed) 
                 left_encoder.reset()
                 right_encoder.reset()
-                flag_new_pid_cycle = True          
+                flag_new_pid_cycle = True
             else:
-                left_speed, right_speed = abs(left_speed), abs(right_speed)
+                # Initialize or reset the PID controller
                 if flag_new_pid_cycle:
-                    pid_right = PID(kp_lin, ki_lin, kd_lin, setpoint=left_encoder.value, output_limits=(0.35,0.65), starting_output=right_speed)
+                    pid_right = PID(kp_lin, ki_lin, kd_lin, setpoint=left_encoder.value, output_limits=(0, 1))
                     flag_new_pid_cycle = False
+                
+                # Set the target for right wheel encoder to match the left wheel encoder
                 pid_right.setpoint = left_encoder.value
+
+                # Update right wheel speed based on encoder feedback
                 right_speed = pid_right(right_encoder.value)
-                if motion == 'forward': pibot.value = (left_speed, right_speed)
-                else: pibot.value = (-left_speed, -right_speed)
-                print('Value', left_encoder.value, right_encoder.value)
-                # print('Value', left_encoder.value, right_encoder.value)
-                # print('Speed', left_speed, right_speed)
-        time.sleep(0.005)
-        if drive_mode == 1:
-            break
-
-
-def handle_mode1():
-    """
-    for waypoint navigation
-    """
-    global motion_queue, kp_lin, ki_lin, kd_lin, kp_turn, ki_turn, kd_turn, turn_tolerance, linear_tolerance
-    while True:
-        # print("motion", motion)
-        try:
-            motion_elem = motion_queue.pop(0)
-            if len(motion_elem) == 2:
-                motion, dt = motion_elem
-            elif len(motion_elem) == 3:
-                motion, left_disp, right_disp = motion_elem
-            left_encoder.reset()
-            right_encoder.reset()
-        except:
-            motion = "stop"
-        finally:
-            if motion == "forward":
-                pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=right_encoder.value, output_limits=(0.35,0.65), starting_output=linear_speed)
-                # pid_right =  PID(kp_lin, ki_lin, kd_lin, setpoint=right_disp, output_limits=(0.48,0.75), starting_output=linear_speed)
-                while (left_encoder.value < abs(left_disp) - linear_tolerance) and (right_encoder.value < abs(right_disp) - linear_tolerance):
-                    pid_left.setpoint = right_encoder.value
-                    # pid_right.setpoint = left_encoder.value
-                    print(f"Setpoint: {left_encoder.value}, {right_encoder.value}")
-                    # right_speed = pid_right(right_encoder.value)
-                    left_speed = pid_left(left_encoder.value)
-                    print(f"Speed: {left_speed}, {linear_speed}")
-                    pibot.value = (left_speed, linear_speed)
-                pibot.value = (0, 0)
-            elif motion == "backward":
-                pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=left_disp, output_limits=(0.48,0.52), starting_output=linear_speed)
-                pid_right =  PID(kp_lin, ki_lin, kd_lin, setpoint=right_disp, output_limits=(0.48,0.52), starting_output=linear_speed)
-                while (left_encoder.value < abs(left_disp) - linear_tolerance) and (right_encoder.value < abs(right_disp) - linear_tolerance):
-                    pid_left.setpoint = max(left_encoder.value, (right_encoder.value+left_encoder.value)/2)
-                    pid_right.setpoint = max(right_encoder.value, (right_encoder.value+left_encoder.value)/2)
-                    print(f"Setpoint: {pid_left.setpoint}, {pid_right.setpoint}")
-                    right_speed = pid_right(right_encoder.value)
-                    left_speed = pid_left(left_encoder.value)
-                    print(f"Speed: {left_speed}, {right_speed}")
+                
+                # Apply the control output to the robot
+                if motion == 'forward':
+                    pibot.value = (left_speed, right_speed)
+                elif motion == 'backward':
                     pibot.value = (-left_speed, -right_speed)
-                pibot.value = (0, 0)
-            elif motion == "turn left":
-                set_point = (left_encoder.value + right_encoder.value) / 2
-                pid_left = PID(kp_turn, ki_turn, kd_turn, setpoint=set_point, output_limits=(0.65,0.85), starting_output=turn_speed)
-                pid_right = PID(kp_turn, ki_turn, kd_turn, setpoint=set_point, output_limits=(0.65,0.85), starting_output=turn_speed)
-                start_time = time.time()
-                while (time.time() - start_time) < dt:
-                    left_speed = pid_left(left_encoder.value)
-                    right_speed = pid_right(right_encoder.value)
-                    pibot.value = (-left_speed, right_speed)
-                pibot.value = (0, 0)
-            elif motion == "turn right":
-                set_point = (left_encoder.value + right_encoder.value) / 2
-                pid_left = PID(kp_turn, ki_turn, kd_turn, setpoint=set_point, output_limits=(0.65,0.85), starting_output=turn_speed)
-                pid_right = PID(kp_turn, ki_turn, kd_turn, setpoint=set_point, output_limits=(0.65,0.85), starting_output=turn_speed)
-                start_time = time.time()
-                while (time.time() - start_time) < dt:
-                    left_speed = pid_left(left_encoder.value)
-                    right_speed = pid_right(right_encoder.value)
-                    pibot.value = (left_speed, -right_speed)
-                pibot.value = (0, 0)
-            if motion != "stop":
-                print('Value', left_encoder.value, right_encoder.value)
-        time.sleep(0.05)
-        if drive_mode == 0:
+                
+                # Debug print statements
+                print(f'Encoder Value - Left: {left_encoder.value}, Right: {right_encoder.value}')
+                print(f'Wheel Speed - Left: {left_speed}, Right: {right_speed}')
+        
+        # Small delay to allow for smooth control loop
+        time.sleep(0.005)
+        
+        # Break if drive_mode switches to 1 (Waypoint Navigation)
+        if drive_mode == 1:
             break
 
 # main function to control the robot wheels
