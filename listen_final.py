@@ -34,7 +34,7 @@ def handle_mode0():
     global use_pid, left_speed, right_speed, motion
     global kp, ki, kd
     flag_new_pid_cycle = True
-    correction_bias = 0.05  # Small bias to adjust for consistent right drift
+    correction_bias = 0.0  # Small bias to adjust for consistent right drift
     
     while True:
         if not use_pid:
@@ -50,8 +50,8 @@ def handle_mode0():
             else:
                 if flag_new_pid_cycle:
                     # Initialize PID controllers with slightly different gains for each wheel
-                    pid_left = PID(kp, ki, kd, setpoint=right_encoder.value, output_limits=(0, 1))
-                    pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0, 1))
+                    pid_left = PID(kp, ki, kd, setpoint=right_encoder.value, output_limits=(0.6, 1))
+                    pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0.6, 1))
                     flag_new_pid_cycle = False
 
                 # Set each wheel's target to the other's encoder value
