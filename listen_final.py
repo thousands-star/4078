@@ -29,7 +29,7 @@ class Encoder(object):
         
 def handle_mode0():
     """
-    Self-driving mode for linear movement with PID control.
+    Self-driving mode with dual-PID control where each wheel tries to match the other's encoder value.
     """
     global use_pid, left_speed, right_speed, motion
     flag_new_pid_cycle = True
@@ -37,28 +37,30 @@ def handle_mode0():
     while True:
         if not use_pid:
             # Direct control without PID
-            pibot.value = (left_speed, right_speed) 
+            pibot.value = (left_speed, right_speed)
         else:
-            # PID for matching right wheel to the left wheel
             if motion in ['stop', 'turning']:
-                # Reset PID if motion is stopped or turning
+                # Reset PID when stopping or turning
                 pibot.value = (left_speed, right_speed) 
                 left_encoder.reset()
                 right_encoder.reset()
                 flag_new_pid_cycle = True
             else:
-                # Initialize or reset the PID controller
+                # Initialize PID controllers on the first cycle
                 if flag_new_pid_cycle:
+                    pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=right_encoder.value, output_limits=(0, 1))
                     pid_right = PID(kp_lin, ki_lin, kd_lin, setpoint=left_encoder.value, output_limits=(0, 1))
                     flag_new_pid_cycle = False
                 
-                # Set the target for right wheel encoder to match the left wheel encoder
+                # Set each wheel's target to the other's encoder value
+                pid_left.setpoint = right_encoder.value
                 pid_right.setpoint = left_encoder.value
 
-                # Update right wheel speed based on encoder feedback
+                # Update both wheel speeds based on PID outputs
+                left_speed = pid_left(left_encoder.value)
                 right_speed = pid_right(right_encoder.value)
-                
-                # Apply the control output to the robot
+
+                # Apply the calculated speeds
                 if motion == 'forward':
                     pibot.value = (left_speed, right_speed)
                 elif motion == 'backward':
@@ -68,12 +70,13 @@ def handle_mode0():
                 print(f'Encoder Value - Left: {left_encoder.value}, Right: {right_encoder.value}')
                 print(f'Wheel Speed - Left: {left_speed}, Right: {right_speed}')
         
-        # Small delay to allow for smooth control loop
+        # Small delay for smoother control loop
         time.sleep(0.005)
         
         # Break if drive_mode switches to 1 (Waypoint Navigation)
         if drive_mode == 1:
             break
+
 
 
 def handle_mode1():
