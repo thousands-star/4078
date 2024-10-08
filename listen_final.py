@@ -32,8 +32,9 @@ def handle_mode0():
     Self-driving mode with dual-PID control and bias correction.
     """
     global use_pid, left_speed, right_speed, motion
+    global kp, ki, kd
     flag_new_pid_cycle = True
-    correction_bias = 0.05  # Small bias to adjust for consistent right drift
+    correction_bias = 0  # Small bias to adjust for consistent right drift
     
     while True:
         if not use_pid:
@@ -49,8 +50,8 @@ def handle_mode0():
             else:
                 if flag_new_pid_cycle:
                     # Initialize PID controllers with slightly different gains for each wheel
-                    pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=right_encoder.value, output_limits=(0, 1))
-                    pid_right = PID(kp_lin * 1.1, ki_lin, kd_lin, setpoint=left_encoder.value, output_limits=(0, 1))
+                    pid_left = PID(kp, ki, kd, setpoint=right_encoder.value, output_limits=(0.35, 0.75))
+                    pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0.35, 0.75))
                     flag_new_pid_cycle = False
 
                 # Set each wheel's target to the other's encoder value
@@ -162,6 +163,17 @@ def move_robot():
         # print("motion", motion)
         handle_mode1()
     
+# Receive confirmation whether to use pid or not to control the wheels (forward & backward)
+@app.route('/pid')
+def set_pid():
+    global use_pid, kp, ki, kd
+    use_pid = int(request.args.get('use_pid'))
+    if use_pid:
+        kp, ki, kd = float(request.args.get('kp')), float(request.args.get('ki')), float(request.args.get('kd'))
+        return "Using PID"
+    else:
+        return "Not using PID"
+    
 @app.route('/linearpid')
 def set_linearpid():
     global kp_lin, ki_lin, kd_lin
@@ -264,6 +276,12 @@ kd_turn = 0.001
 kp_lin = 2
 ki_lin = 0.05
 kd_lin = 0.01
+
+use_pid = False 
+kp = 0 
+ki = 0
+kd = 0
+
 left_speed = 0
 right_speed = 0
 linear_speed = 0.5
