@@ -174,11 +174,11 @@ def move_robot():
 # Receive confirmation whether to use pid or not to control the wheels (forward & backward)
 @app.route('/pid')
 def set_pid():
-    global use_pid, kp_f, ki_f, kd_f,kp_b, ki_b, kd_b
+    global use_pid,kp_forward, ki_forward, kd_forward,kp_backward, ki_backward, kd_backward
     use_pid = int(request.args.get('use_pid'))
     if use_pid:
-        kp_f, ki_f, kd_f = float(request.args.get('kp_f')), float(request.args.get('ki_f')), float(request.args.get('kd_f'))
-        kp_b, ki_b, kd_b = float(request.args.get('kp_b')), float(request.args.get('ki_b')), float(request.args.get('kd_b'))
+        kp_forward, ki_forward, kd_forward = float(request.args.get('kp_f')), float(request.args.get('ki_f')), float(request.args.get('kd_f'))
+        kp_backward, ki_backward, kd_backward = float(request.args.get('kp_b')), float(request.args.get('ki_b')), float(request.args.get('kd_b'))
         return "Using PID"
     else:
         return "Not using PID"
@@ -287,12 +287,12 @@ ki_lin = 0.05
 kd_lin = 0.01
 
 use_pid = False 
-kp_f = 0 
-ki_f = 0
-kd_f = 0
-kp_b = 0 
-ki_b = 0
-kd_b = 0
+kp_forward = 0 
+ki_forward = 0
+kd_forward = 0
+kp_backward = 0 
+ki_backward = 0
+kd_backward = 0
 
 left_speed = 0
 right_speed = 0
