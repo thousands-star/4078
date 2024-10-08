@@ -75,6 +75,75 @@ def handle_mode0():
         if drive_mode == 1:
             break
 
+
+def handle_mode1():
+    """
+    for waypoint navigation
+    """
+    global motion_queue, kp_lin, ki_lin, kd_lin, kp_turn, ki_turn, kd_turn, turn_tolerance, linear_tolerance
+    while True:
+        # print("motion", motion)
+        try:
+            motion_elem = motion_queue.pop(0)
+            if len(motion_elem) == 2:
+                motion, dt = motion_elem
+            elif len(motion_elem) == 3:
+                motion, left_disp, right_disp = motion_elem
+            left_encoder.reset()
+            right_encoder.reset()
+        except:
+            motion = "stop"
+        finally:
+            if motion == "forward":
+                pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=right_encoder.value, output_limits=(0.35,0.65), starting_output=linear_speed)
+                # pid_right =  PID(kp_lin, ki_lin, kd_lin, setpoint=right_disp, output_limits=(0.48,0.75), starting_output=linear_speed)
+                while (left_encoder.value < abs(left_disp) - linear_tolerance) and (right_encoder.value < abs(right_disp) - linear_tolerance):
+                    pid_left.setpoint = right_encoder.value
+                    # pid_right.setpoint = left_encoder.value
+                    print(f"Setpoint: {left_encoder.value}, {right_encoder.value}")
+                    # right_speed = pid_right(right_encoder.value)
+                    left_speed = pid_left(left_encoder.value)
+                    print(f"Speed: {left_speed}, {linear_speed}")
+                    pibot.value = (left_speed, linear_speed)
+                pibot.value = (0, 0)
+            elif motion == "backward":
+                pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=left_disp, output_limits=(0.48,0.52), starting_output=linear_speed)
+                pid_right =  PID(kp_lin, ki_lin, kd_lin, setpoint=right_disp, output_limits=(0.48,0.52), starting_output=linear_speed)
+                while (left_encoder.value < abs(left_disp) - linear_tolerance) and (right_encoder.value < abs(right_disp) - linear_tolerance):
+                    pid_left.setpoint = max(left_encoder.value, (right_encoder.value+left_encoder.value)/2)
+                    pid_right.setpoint = max(right_encoder.value, (right_encoder.value+left_encoder.value)/2)
+                    print(f"Setpoint: {pid_left.setpoint}, {pid_right.setpoint}")
+                    right_speed = pid_right(right_encoder.value)
+                    left_speed = pid_left(left_encoder.value)
+                    print(f"Speed: {left_speed}, {right_speed}")
+                    pibot.value = (-left_speed, -right_speed)
+                pibot.value = (0, 0)
+            elif motion == "turn left":
+                set_point = (left_encoder.value + right_encoder.value) / 2
+                pid_left = PID(kp_turn, ki_turn, kd_turn, setpoint=set_point, output_limits=(0.65,0.85), starting_output=turn_speed)
+                pid_right = PID(kp_turn, ki_turn, kd_turn, setpoint=set_point, output_limits=(0.65,0.85), starting_output=turn_speed)
+                start_time = time.time()
+                while (time.time() - start_time) < dt:
+                    left_speed = pid_left(left_encoder.value)
+                    right_speed = pid_right(right_encoder.value)
+                    pibot.value = (-left_speed, right_speed)
+                pibot.value = (0, 0)
+            elif motion == "turn right":
+                set_point = (left_encoder.value + right_encoder.value) / 2
+                pid_left = PID(kp_turn, ki_turn, kd_turn, setpoint=set_point, output_limits=(0.65,0.85), starting_output=turn_speed)
+                pid_right = PID(kp_turn, ki_turn, kd_turn, setpoint=set_point, output_limits=(0.65,0.85), starting_output=turn_speed)
+                start_time = time.time()
+                while (time.time() - start_time) < dt:
+                    left_speed = pid_left(left_encoder.value)
+                    right_speed = pid_right(right_encoder.value)
+                    pibot.value = (left_speed, -right_speed)
+                pibot.value = (0, 0)
+            if motion != "stop":
+                print('Value', left_encoder.value, right_encoder.value)
+        time.sleep(0.05)
+        if drive_mode == 0:
+            break
+
 # main function to control the robot wheels
 def move_robot():
     # print("mode", drive_mode)
