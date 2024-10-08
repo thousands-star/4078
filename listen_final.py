@@ -32,9 +32,13 @@ def handle_mode0():
     Self-driving mode with dual-PID control and separate PID values for forward and backward movement.
     """
     global use_pid, left_speed, right_speed, motion
-    global kp_f, ki_f, kd_f, kp_b, ki_b, kd_b
+    global kp_forward, ki_forward, kd_forward, kp_backward, ki_backward, kd_backward
     flag_new_pid_cycle = True
-    correction_bias = 0  # Set to a non-zero value if there's a consistent drift during movement
+    correction_bias = 0  # Adjust this if there's consistent drift during movement
+
+    # Initialize pid_left and pid_right as None
+    pid_left = None
+    pid_right = None
 
     while True:
         if not use_pid:
@@ -47,16 +51,18 @@ def handle_mode0():
                 left_encoder.reset()
                 right_encoder.reset()
                 flag_new_pid_cycle = True
+                pid_left = None  # Reset the PID controllers
+                pid_right = None
             else:
-                if flag_new_pid_cycle:
+                # Initialize PID controllers if they haven't been initialized
+                if pid_left is None or pid_right is None:
                     # Choose PID values based on movement direction
                     if motion == 'forward':
-                        pid_left = PID(kp_f, ki_f, kd_f, setpoint=right_encoder.value, output_limits=(0.6, 1))
-                        pid_right = PID(kp_f, ki_f, kd_f, setpoint=left_encoder.value, output_limits=(0.6, 1))
+                        pid_left = PID(kp_forward, ki_forward, kd_forward, setpoint=right_encoder.value, output_limits=(0.6, 1))
+                        pid_right = PID(kp_forward, ki_forward, kd_forward, setpoint=left_encoder.value, output_limits=(0.6, 1))
                     elif motion == 'backward':
-                        pid_left = PID(kp_b, ki_b, kd_b, setpoint=right_encoder.value, output_limits=(0.6, 1))
-                        pid_right = PID(kp_b, ki_b, kd_b, setpoint=left_encoder.value, output_limits=(0.6, 1))
-                    flag_new_pid_cycle = False
+                        pid_left = PID(kp_backward, ki_backward, kd_backward, setpoint=right_encoder.value, output_limits=(0.6, 1))
+                        pid_right = PID(kp_backward, ki_backward, kd_backward, setpoint=left_encoder.value, output_limits=(0.6, 1))
 
                 # Set each wheel's target to the other's encoder value
                 pid_left.setpoint = right_encoder.value
@@ -86,9 +92,6 @@ def handle_mode0():
         # Break if drive_mode switches to 1 (Waypoint Navigation)
         if drive_mode == 1:
             break
-
-
-
 
 
 def handle_mode1():
