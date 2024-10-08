@@ -34,7 +34,7 @@ def handle_mode0():
     global use_pid, left_speed, right_speed, motion
     global kp, ki, kd
     flag_new_pid_cycle = True
-    correction_bias = 0.0  # Small bias to adjust for consistent right drift
+    correction_bias = 0.05  # Small bias to adjust for consistent right drift
     
     while True:
         if not use_pid:
