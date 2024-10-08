@@ -29,13 +29,13 @@ class Encoder(object):
         
 def handle_mode0():
     """
-    Self-driving mode with dual-PID control and bias correction.
+    Self-driving mode with dual-PID control and separate PID values for forward and backward movement.
     """
     global use_pid, left_speed, right_speed, motion
-    global kp, ki, kd
+    global kp_f, ki_f, kd_f, kp_b, ki_b, kd_b
     flag_new_pid_cycle = True
-    correction_bias = 0  # Small bias to adjust for consistent right drift
-    
+    correction_bias = 0  # Set to a non-zero value if there's a consistent drift during movement
+
     while True:
         if not use_pid:
             # Direct control without PID
@@ -43,15 +43,19 @@ def handle_mode0():
         else:
             if motion in ['stop', 'turning']:
                 # Reset PID when stopping or turning
-                pibot.value = (left_speed, right_speed) 
+                pibot.value = (left_speed, right_speed)
                 left_encoder.reset()
                 right_encoder.reset()
                 flag_new_pid_cycle = True
             else:
                 if flag_new_pid_cycle:
-                    # Initialize PID controllers with slightly different gains for each wheel
-                    pid_left = PID(kp, ki, kd, setpoint=right_encoder.value, output_limits=(0.6, 1))
-                    pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0.6, 1))
+                    # Choose PID values based on movement direction
+                    if motion == 'forward':
+                        pid_left = PID(kp_f, ki_f, kd_f, setpoint=right_encoder.value, output_limits=(0.6, 1))
+                        pid_right = PID(kp_f, ki_f, kd_f, setpoint=left_encoder.value, output_limits=(0.6, 1))
+                    elif motion == 'backward':
+                        pid_left = PID(kp_b, ki_b, kd_b, setpoint=right_encoder.value, output_limits=(0.6, 1))
+                        pid_right = PID(kp_b, ki_b, kd_b, setpoint=left_encoder.value, output_limits=(0.6, 1))
                     flag_new_pid_cycle = False
 
                 # Set each wheel's target to the other's encoder value
@@ -62,11 +66,11 @@ def handle_mode0():
                 left_output = pid_left(left_encoder.value)
                 right_output = pid_right(right_encoder.value)
 
-                # Apply a small bias to the right wheel
+                # Apply correction bias if needed
                 left_speed = left_output
                 right_speed = right_output + correction_bias
 
-                # Set speeds based on motion direction
+                # Apply the speed adjustments based on the direction
                 if motion == 'forward':
                     pibot.value = (left_speed, right_speed)
                 elif motion == 'backward':
@@ -82,6 +86,7 @@ def handle_mode0():
         # Break if drive_mode switches to 1 (Waypoint Navigation)
         if drive_mode == 1:
             break
+
 
 
 
@@ -166,10 +171,11 @@ def move_robot():
 # Receive confirmation whether to use pid or not to control the wheels (forward & backward)
 @app.route('/pid')
 def set_pid():
-    global use_pid, kp, ki, kd
+    global use_pid, kp_f, ki_f, kd_f,kp_b, ki_b, kd_b
     use_pid = int(request.args.get('use_pid'))
     if use_pid:
-        kp, ki, kd = float(request.args.get('kp')), float(request.args.get('ki')), float(request.args.get('kd'))
+        kp_f, ki_f, kd_f = float(request.args.get('kp_f')), float(request.args.get('ki_f')), float(request.args.get('kd_f'))
+        kp_b, ki_b, kd_b = float(request.args.get('kp_b')), float(request.args.get('ki_b')), float(request.args.get('kd_b'))
         return "Using PID"
     else:
         return "Not using PID"
@@ -278,9 +284,12 @@ ki_lin = 0.05
 kd_lin = 0.01
 
 use_pid = False 
-kp = 0 
-ki = 0
-kd = 0
+kp_f = 0 
+ki_f = 0
+kd_f = 0
+kp_b = 0 
+ki_b = 0
+kd_b = 0
 
 left_speed = 0
 right_speed = 0
