@@ -49,7 +49,7 @@ def handle_mode0():
             else:
                 left_speed, right_speed = abs(left_speed), abs(right_speed)
                 if flag_new_pid_cycle:
-                    pid_right = PID(kp_lin, ki_lin, kd_lin, setpoint=left_encoder.value, output_limits=(0,1), starting_output=right_speed)
+                    pid_right = PID(kp_lin, ki_lin, kd_lin, setpoint=left_encoder.value, output_limits=(0.35,0.65), starting_output=right_speed)
                     flag_new_pid_cycle = False
                 pid_right.setpoint = left_encoder.value
                 right_speed = pid_right(right_encoder.value)
