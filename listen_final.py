@@ -29,10 +29,11 @@ class Encoder(object):
         
 def handle_mode0():
     """
-    Self-driving mode with dual-PID control where each wheel tries to match the other's encoder value.
+    Self-driving mode with dual-PID control and bias correction.
     """
     global use_pid, left_speed, right_speed, motion
     flag_new_pid_cycle = True
+    correction_bias = 0.05  # Small bias to adjust for consistent right drift
     
     while True:
         if not use_pid:
@@ -46,29 +47,33 @@ def handle_mode0():
                 right_encoder.reset()
                 flag_new_pid_cycle = True
             else:
-                # Initialize PID controllers on the first cycle
                 if flag_new_pid_cycle:
+                    # Initialize PID controllers with slightly different gains for each wheel
                     pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=right_encoder.value, output_limits=(0, 1))
-                    pid_right = PID(kp_lin, ki_lin, kd_lin, setpoint=left_encoder.value, output_limits=(0, 1))
+                    pid_right = PID(kp_lin * 1.1, ki_lin, kd_lin, setpoint=left_encoder.value, output_limits=(0, 1))
                     flag_new_pid_cycle = False
-                
+
                 # Set each wheel's target to the other's encoder value
                 pid_left.setpoint = right_encoder.value
                 pid_right.setpoint = left_encoder.value
 
-                # Update both wheel speeds based on PID outputs
-                left_speed = pid_left(left_encoder.value)
-                right_speed = pid_right(right_encoder.value)
+                # Get the PID outputs
+                left_output = pid_left(left_encoder.value)
+                right_output = pid_right(right_encoder.value)
 
-                # Apply the calculated speeds
+                # Apply a small bias to the right wheel
+                left_speed = left_output
+                right_speed = right_output + correction_bias
+
+                # Set speeds based on motion direction
                 if motion == 'forward':
                     pibot.value = (left_speed, right_speed)
                 elif motion == 'backward':
                     pibot.value = (-left_speed, -right_speed)
-                
+
                 # Debug print statements
                 print(f'Encoder Value - Left: {left_encoder.value}, Right: {right_encoder.value}')
-                print(f'Wheel Speed - Left: {left_speed}, Right: {right_speed}')
+                print(f'Wheel Speed - Left: {left_speed}, Right: {right_speed} (with bias)')
         
         # Small delay for smoother control loop
         time.sleep(0.005)
@@ -76,6 +81,7 @@ def handle_mode0():
         # Break if drive_mode switches to 1 (Waypoint Navigation)
         if drive_mode == 1:
             break
+
 
 
 
