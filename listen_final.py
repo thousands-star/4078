@@ -37,8 +37,8 @@ def handle_mode0():
     correction_bias = 0  # Adjust this if there's consistent drift during movement
 
     # Initialize pid_left and pid_right as None
-    pid_left = None
-    pid_right = None
+    pid_left = PID(kp_forward, ki_forward, kd_forward, setpoint=right_encoder.value, output_limits=(0.6, 1))
+    pid_right = PID(kp_forward, ki_forward, kd_forward, setpoint=left_encoder.value, output_limits=(0.6, 1))
 
     while True:
         if not use_pid:
@@ -58,11 +58,19 @@ def handle_mode0():
                 if pid_left is None or pid_right is None:
                     # Choose PID values based on movement direction
                     if motion == 'forward':
-                        pid_left = PID(kp_forward, ki_forward, kd_forward, setpoint=right_encoder.value, output_limits=(0.6, 1))
-                        pid_right = PID(kp_forward, ki_forward, kd_forward, setpoint=left_encoder.value, output_limits=(0.6, 1))
+                        pid_left.Kp = kp_forward
+                        pid_left.Ki = ki_forward
+                        pid_left.Kd = kd_forward
+                        pid_right.Kp = kp_forward
+                        pid_right.Ki = ki_forward
+                        pid_right.Kd = kd_forward
                     elif motion == 'backward':
-                        pid_left = PID(kp_backward, ki_backward, kd_backward, setpoint=right_encoder.value, output_limits=(0.6, 1))
-                        pid_right = PID(kp_backward, ki_backward, kd_backward, setpoint=left_encoder.value, output_limits=(0.6, 1))
+                        pid_left.Kp = kp_backward
+                        pid_left.Ki = ki_backward
+                        pid_left.Kd = kd_backward
+                        pid_right.Kp = kp_backward
+                        pid_right.Ki = ki_backward
+                        pid_right.Kd = kd_backward
 
                 # Set each wheel's target to the other's encoder value
                 pid_left.setpoint = right_encoder.value
