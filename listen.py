@@ -35,8 +35,7 @@ def move_robot():
     while True:
         ### if not using pid, just move the wheels as commanded
         if not use_pid:
-            pibot.value = (left_speed, right_speed) 
-            print('Value', left_encoder.value, right_encoder.value)         
+            pibot.value = (left_speed, right_speed)          
         ### with pid, left wheel is set as reference, and right wheel will try to match the encoder counter of left wheel
         ### pid only runs when robot moves forward or backward. Turning does not use pid
         else:
