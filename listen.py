@@ -99,12 +99,12 @@ def move():
 
 
 # Constants
-in1 = 17 # may have to change this
-in2 = 27 # may have to change this
-ena = 18
-in3 = 23 # may have to change this
-in4 = 24 # may have to change this
-enb = 25
+ena = 25
+in1 = 24 # may have to change this
+in2 = 23 # may have to change this
+in3 = 11 # may have to change this
+in4 = 9 # may have to change this
+enb = 10
 enc_a = 26
 enc_b = 16
 
