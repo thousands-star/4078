@@ -252,12 +252,13 @@ def set_mode():
     
 
 # Constants
-in1 = 17 # may have to change this
-in2 = 27 # may have to change this
-ena = 18
-in3 = 23 # may have to change this
-in4 = 24 # may have to change this
-enb = 25
+ena = 22
+in1 = 27 # may have to change this
+in2 = 17 # may have to change this
+in3 = 4 # may have to change this
+in4 = 3 # may have to change this
+enb = 2
+
 enc_a = 26
 enc_b = 16
 
