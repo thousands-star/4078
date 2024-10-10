@@ -84,8 +84,6 @@ def handle_mode0():
             break
 
 
-
-
 def handle_mode1():
     """
     for waypoint navigation
@@ -310,11 +308,10 @@ flask_thread.start()
 
 try:
     while True:
-        time.sleep(10)
-        # if drive_mode == 0:
-        #     handle_mode0()
-        # else:
-        #     handle_mode1()
+        if drive_mode == 0:
+            handle_mode0()
+        else:
+            handle_mode1()
 except KeyboardInterrupt:
     pibot.stop()
     picam2.stop()
