@@ -108,10 +108,10 @@ def handle_mode1():
                 while (left_encoder.value < abs(left_disp) - linear_tolerance) and (right_encoder.value < abs(right_disp) - linear_tolerance):
                     pid_left.setpoint = right_encoder.value
                     # pid_right.setpoint = left_encoder.value
-                    print(f"Setpoint: {left_encoder.value}, {right_encoder.value}")
+                    # print(f"Setpoint: {left_encoder.value}, {right_encoder.value}")
                     # right_speed = pid_right(right_encoder.value)
                     left_speed = pid_left(left_encoder.value)
-                    print(f"Speed: {left_speed}, {linear_speed}")
+                    # print(f"Speed: {left_speed}, {linear_speed}")
                     pibot.value = (left_speed, linear_speed)
                 pibot.value = (0, 0)
             elif motion == "backward":
@@ -120,10 +120,10 @@ def handle_mode1():
                 while (left_encoder.value < abs(left_disp) - linear_tolerance) and (right_encoder.value < abs(right_disp) - linear_tolerance):
                     pid_left.setpoint = max(left_encoder.value, (right_encoder.value+left_encoder.value)/2)
                     pid_right.setpoint = max(right_encoder.value, (right_encoder.value+left_encoder.value)/2)
-                    print(f"Setpoint: {pid_left.setpoint}, {pid_right.setpoint}")
+                    # print(f"Setpoint: {pid_left.setpoint}, {pid_right.setpoint}")
                     right_speed = pid_right(right_encoder.value)
                     left_speed = pid_left(left_encoder.value)
-                    print(f"Speed: {left_speed}, {right_speed}")
+                    # print(f"Speed: {left_speed}, {right_speed}")
                     pibot.value = (-left_speed, -right_speed)
                 pibot.value = (0, 0)
             elif motion == "turn left":
@@ -151,15 +151,6 @@ def handle_mode1():
         time.sleep(0.05)
         if drive_mode == 0:
             break
-
-# main function to control the robot wheels
-def move_robot():
-    # print("mode", drive_mode)
-    if drive_mode == 0:
-        handle_mode0()
-    else:
-        # print("motion", motion)
-        handle_mode1()
     
 # Receive confirmation whether to use pid or not to control the wheels (forward & backward)
 @app.route('/pid')
@@ -313,6 +304,7 @@ try:
         else:
             handle_mode1()
         time.sleep(0.005)
+
 except KeyboardInterrupt:
     pibot.stop()
     picam2.stop()
