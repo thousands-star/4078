@@ -108,7 +108,7 @@ def handle_mode1():
                 while (left_encoder.value < abs(left_disp) - linear_tolerance) and (right_encoder.value < abs(right_disp) - linear_tolerance):
                     pid_left.setpoint = right_encoder.value
                     # pid_right.setpoint = left_encoder.value
-                    # print(f"Setpoint: {left_encoder.value}, {right_encoder.value}")
+                    print(f"Setpoint: {left_encoder.value}, {right_encoder.value}")
                     # right_speed = pid_right(right_encoder.value)
                     left_speed = pid_left(left_encoder.value)
                     # print(f"Speed: {left_speed}, {linear_speed}")
