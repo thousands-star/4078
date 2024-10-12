@@ -252,7 +252,7 @@ enc_a = 26
 enc_b = 16
 
 # Initialize robot and encoders
-pibot = Robot(right=Motor(forward=in1, backward=in2, enable=ena), left=Motor(forward=in3, backward=in4, enable=enb))
+pibot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
 
 # Initialize PID controllers for wheels
 left_encoder = Encoder(enc_a)
