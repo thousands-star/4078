@@ -103,8 +103,8 @@ def handle_mode1():
             motion = "stop"
         finally:
             if motion == "forward":
-                pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=left_disp, output_limits=(0.6,0.75), starting_output=linear_speed)
-                pid_right =  PID(kp_lin, ki_lin, kd_lin, setpoint=right_disp, output_limits=(0.6,0.75), starting_output=linear_speed)
+                pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=left_disp, output_limits=(0.48,0.52), starting_output=linear_speed)
+                pid_right =  PID(kp_lin, ki_lin, kd_lin, setpoint=right_disp, output_limits=(0.48,0.52), starting_output=linear_speed)
                 while (left_encoder.value < abs(left_disp) - linear_tolerance) and (right_encoder.value < abs(right_disp) - linear_tolerance):
                     pid_left.setpoint = max(left_encoder.value, (right_encoder.value+left_encoder.value)/2)
                     pid_right.setpoint = max(right_encoder.value, (right_encoder.value+left_encoder.value)/2)
@@ -242,10 +242,10 @@ def set_mode():
 
 # Constants
 ena = 13
-in1 = 6 # may have to change this
-in2 = 5 # may have to change this
-in3 = 23 # may have to change this
-in4 = 24 # may have to change this
+in1 = 5 # may have to change this
+in2 = 6 # may have to change this
+in3 = 24 # may have to change this
+in4 = 23 # may have to change this
 enb = 25
 
 enc_a = 16
