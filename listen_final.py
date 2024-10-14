@@ -112,7 +112,7 @@ def handle_mode1():
                     right_speed = pid_right(right_encoder.value)
                     left_speed = pid_left(left_encoder.value)
                     # print(f"Speed: {left_speed}, {right_speed}")
-                    pibot.value = (right_speed, left_speed)
+                    pibot.value = (left_speed, right_speed)
                 pibot.value = (0, 0)
             elif motion == "backward":
                 pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=left_disp, output_limits=(0.48,0.52), starting_output=linear_speed)
@@ -248,8 +248,8 @@ in3 = 23 # may have to change this
 in4 = 24 # may have to change this
 enb = 25
 
-enc_a = 16
-enc_b = 26
+enc_a = 26
+enc_b = 16
 
 # Initialize robot and encoders
 pibot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
