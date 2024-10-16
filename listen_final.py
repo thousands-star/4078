@@ -242,8 +242,8 @@ def set_mode():
 
 # Constants
 ena = 25
-in1 = 24
-in2 = 23
+in1 = 23
+in2 = 24
 in3 = 5
 in4 = 6
 enb = 13
