@@ -64,7 +64,7 @@ def handle_mode0():
 
                 # Apply a small bias to the right wheel
                 left_speed = left_output
-                right_speed = right_output + correction_bias
+                right_speed = right_output
 
                 # Set speeds based on motion direction
                 if motion == 'forward':
