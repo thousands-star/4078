@@ -110,7 +110,7 @@ def handle_mode1():
                     pid_right.setpoint = max(right_encoder.value, (right_encoder.value+left_encoder.value)/2)
                     # print(f"Setpoint: {pid_left.setpoint}, {pid_right.setpoint}")
                     right_speed = pid_right(right_encoder.value) + 0.0
-                    left_speed = pid_left(left_encoder.value) + 0.1
+                    left_speed = pid_left(left_encoder.value) + 0.2
                     # print(f"Speed: {left_speed}, {right_speed}")
                     pibot.value = (left_speed, right_speed)
                 pibot.value = (0, 0)
