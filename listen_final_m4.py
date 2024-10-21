@@ -10,22 +10,51 @@ import threading
 app = Flask(__name__)
 
 
+import threading
+from gpiozero import DigitalInputDevice
+
 class Encoder(object):
-    def __init__(self, pin):
+    def __init__(self, pin_a, pin_b=None, bounce_time=0.01):
+        """
+        Initialize the encoder with debounce support.
+        :param pin_a: The GPIO pin connected to the encoder's first signal.
+        :param pin_b: The GPIO pin connected to the encoder's second signal (for direction handling).
+        :param bounce_time: Debounce time in seconds to prevent false triggers (default: 10ms).
+        """
         self._value = 0
-        self.encoder = DigitalInputDevice(pin)
-        self.encoder.when_activated = self._increment
-        self.encoder.when_deactivated = self._increment
-    
+        self._lock = threading.Lock()  # For thread safety
+
+        # Configure the encoder pin with debounce
+        self.encoder_a = DigitalInputDevice(pin_a, bounce_time=bounce_time)
+        self.encoder_a.when_activated = self._increment
+        self.encoder_a.when_deactivated = self._increment
+
+        # Optional second pin to handle direction
+        self.encoder_b = None
+        if pin_b:
+            self.encoder_b = DigitalInputDevice(pin_b, bounce_time=bounce_time)
+
     def reset(self):
-        self._value = 0
-    
+        """Reset the encoder count to zero."""
+        with self._lock:
+            self._value = 0
+
     def _increment(self):
-        self._value += 1
-        
+        """Increment or decrement the encoder value based on direction."""
+        with self._lock:
+            if self.encoder_b and self.encoder_b.is_active:
+                # If pin_b is active, decrement (counterclockwise direction)
+                self._value -= 1
+            else:
+                # Otherwise, increment (clockwise direction)
+                self._value += 1
+
     @property
     def value(self):
-        return self._value
+        """Return the current encoder value."""
+        with self._lock:
+            return self._value
+
         
 def handle_mode0():
     """
