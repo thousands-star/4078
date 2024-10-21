@@ -89,6 +89,7 @@ def handle_mode1():
     for waypoint navigation
     """
     global motion_queue, kp_lin, ki_lin, kd_lin, kp_turn, ki_turn, kd_turn, turn_tolerance, linear_tolerance
+    global left_offset, right_offset
     while True:
         # print("motion", motion)
         try:
@@ -109,8 +110,8 @@ def handle_mode1():
                     pid_left.setpoint = max(left_encoder.value, (right_encoder.value+left_encoder.value)/2)
                     pid_right.setpoint = max(right_encoder.value, (right_encoder.value+left_encoder.value)/2)
                     # print(f"Setpoint: {pid_left.setpoint}, {pid_right.setpoint}")
-                    right_speed = pid_right(right_encoder.value) + 0.0
-                    left_speed = pid_left(left_encoder.value) + 0.15
+                    right_speed = pid_right(right_encoder.value) + left_offset
+                    left_speed = pid_left(left_encoder.value) + right_offset
                     # print(f"Speed: {left_speed}, {right_speed}")
                     pibot.value = (left_speed, right_speed)
                 pibot.value = (0, 0)
@@ -238,6 +239,12 @@ def set_mode():
     drive_mode = int(request.args.get('mode'))
     print(drive_mode)
     return str(drive_mode)
+
+@app.route('/offset')
+def set_offset():
+    global left_offset, right_offset
+    left_offset, right_offset = int(request.args.get('left_offset'), int(request.args.get('right_offset')))
+    return 'cao!!!!!!!'
     
 
 # Constants
@@ -258,6 +265,9 @@ pibot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(for
 left_encoder = Encoder(enc_a)
 right_encoder = Encoder(enc_b)
 use_pid = 0
+
+left_offset = 0
+right_offset = 0
 
 kp_turn= 0.1
 ki_turn = 0.005
