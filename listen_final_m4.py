@@ -112,7 +112,7 @@ def handle_mode1():
                     # print(f"Setpoint: {pid_left.setpoint}, {pid_right.setpoint}")
                     right_speed = pid_right(right_encoder.value) + right_offset
                     left_speed = pid_left(left_encoder.value) + left_offset
-                    # print(f"Speed: {left_speed}, {right_speed}")
+                    print(f"Speed: {left_speed}, {right_speed}")
                     pibot.value = (left_speed, right_speed)
                 pibot.value = (0, 0)
             elif motion == "backward":
