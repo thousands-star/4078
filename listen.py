@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 
 class Encoder(object):
-    def __init__(self, pin_a, pin_b=None, bounce_time=0.02):
+    def __init__(self, pin_a, pin_b=None, bounce_time=0.01):
         """
         Initialize the encoder with debounce support.
         :param pin_a: The GPIO pin connected to the encoder's first signal.
