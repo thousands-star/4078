@@ -243,7 +243,7 @@ def set_mode():
 @app.route('/offset')
 def set_offset():
     global left_offset, right_offset
-    left_offset, right_offset = int(request.args.get('left_offset'), int(request.args.get('right_offset')))
+    left_offset, right_offset = float(request.args.get('left_offset'), float(request.args.get('right_offset')))
     return 'cao!!!!!!!'
     
 
