@@ -248,8 +248,8 @@ in3 = 5
 in4 = 6
 enb = 13
 
-enc_a = 17
-enc_b = 16
+enc_a = 26
+enc_b = 17
 
 # Initialize robot and encoders
 pibot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
