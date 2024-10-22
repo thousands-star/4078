@@ -10,28 +10,58 @@ import threading
 app = Flask(__name__)
 
 
+import threading
+from gpiozero import DigitalInputDevice
+
 class Encoder(object):
-    def __init__(self, pin):
+    def __init__(self, pin_a, pin_b=None, bounce_time=0.005):
+        """
+        Initialize the encoder with debounce support.
+        :param pin_a: The GPIO pin connected to the encoder's first signal.
+        :param pin_b: The GPIO pin connected to the encoder's second signal (for direction handling).
+        :param bounce_time: Debounce time in seconds to prevent false triggers (default: 10ms).
+        """
         self._value = 0
-        self.encoder = DigitalInputDevice(pin)
-        self.encoder.when_activated = self._increment
-        self.encoder.when_deactivated = self._increment
-    
+        self._lock = threading.Lock()  # For thread safety
+
+        # Configure the encoder pin with debounce
+        self.encoder_a = DigitalInputDevice(pin_a, bounce_time=bounce_time)
+        self.encoder_a.when_activated = self._increment
+        self.encoder_a.when_deactivated = self._increment
+
+        # Optional second pin to handle direction
+        self.encoder_b = None
+        if pin_b:
+            self.encoder_b = DigitalInputDevice(pin_b, bounce_time=bounce_time)
+
     def reset(self):
-        self._value = 0
-    
+        """Reset the encoder count to zero."""
+        with self._lock:
+            self._value = 0
+
     def _increment(self):
-        self._value += 1
-        
+        """Increment or decrement the encoder value based on direction."""
+        with self._lock:
+            if self.encoder_b and self.encoder_b.is_active:
+                # If pin_b is active, decrement (counterclockwise direction)
+                self._value -= 1
+            else:
+                # Otherwise, increment (clockwise direction)
+                self._value += 1
+
     @property
     def value(self):
-        return self._value
+        """Return the current encoder value."""
+        with self._lock:
+            return self._value
+
         
 def handle_mode0():
     """
     Self-driving mode with dual-PID control and bias correction.
     """
     global use_pid, left_speed, right_speed, motion
+    global left_offset, right_offset
     global kp, ki, kd
     flag_new_pid_cycle = True
     correction_bias = 0.07  # Small bias to adjust for consistent right drift
@@ -50,8 +80,8 @@ def handle_mode0():
             else:
                 if flag_new_pid_cycle:
                     # Initialize PID controllers with slightly different gains for each wheel
-                    pid_left = PID(kp, ki, kd, setpoint=right_encoder.value, output_limits=(0.6, 0.93))
-                    pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0.6, 0.93))
+                    pid_left = PID(kp, ki, kd, setpoint=right_encoder.value, output_limits=(0.6, 0.7))
+                    pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0.6, 0.7))
                     flag_new_pid_cycle = False
 
                 # Set each wheel's target to the other's encoder value
@@ -63,8 +93,8 @@ def handle_mode0():
                 right_output = pid_right(right_encoder.value)
 
                 # Apply a small bias to the right wheel
-                left_speed = left_output
-                right_speed = right_output
+                left_speed = left_output + left_offset
+                right_speed = right_output + right_offset
 
                 # Set speeds based on motion direction
                 if motion == 'forward':
@@ -73,8 +103,8 @@ def handle_mode0():
                     pibot.value = (-left_speed, -right_speed)
 
                 # Debug print statements
-                # print(f'Encoder Value - Left: {left_encoder.value}, Right: {right_encoder.value}')
-                # print(f'Wheel Speed - Left: {left_speed}, Right: {right_speed} (with bias)')
+                print(f'Encoder Value - Left: {left_encoder.value}, Right: {right_encoder.value}')
+                print(f'Wheel Speed - Left: {left_speed}, Right: {right_speed} (with bias)')
         
         # Small delay for smoother control loop
         time.sleep(0.005)
@@ -89,6 +119,7 @@ def handle_mode1():
     for waypoint navigation
     """
     global motion_queue, kp_lin, ki_lin, kd_lin, kp_turn, ki_turn, kd_turn, turn_tolerance, linear_tolerance
+    global left_offset, right_offset
     while True:
         # print("motion", motion)
         try:
@@ -103,15 +134,15 @@ def handle_mode1():
             motion = "stop"
         finally:
             if motion == "forward":
-                pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=left_disp, output_limits=(0.55,0.65), starting_output=linear_speed)
-                pid_right =  PID(kp_lin, ki_lin, kd_lin, setpoint=right_disp, output_limits=(0.55,0.65), starting_output=linear_speed)
+                pid_left = PID(kp_lin, ki_lin, kd_lin, setpoint=left_disp, output_limits=(0.4,0.6), starting_output=linear_speed)
+                pid_right =  PID(kp_lin, ki_lin, kd_lin, setpoint=right_disp, output_limits=(0.4,0.6), starting_output=linear_speed)
                 while (left_encoder.value < abs(left_disp) - linear_tolerance) and (right_encoder.value < abs(right_disp) - linear_tolerance):
                     pid_left.setpoint = max(left_encoder.value, (right_encoder.value+left_encoder.value)/2)
                     pid_right.setpoint = max(right_encoder.value, (right_encoder.value+left_encoder.value)/2)
-                    # print(f"Setpoint: {pid_left.setpoint}, {pid_right.setpoint}")
-                    right_speed = pid_right(right_encoder.value) + 0.0
-                    left_speed = pid_left(left_encoder.value) + 0.0
-                    # print(f"Speed: {left_speed}, {right_speed}")
+                    #print(f"Setpoint: {pid_left.setpoint}, {pid_right.setpoint}")
+                    right_speed = pid_right(right_encoder.value) + right_offset
+                    left_speed = pid_left(left_encoder.value) + left_offset
+                    print(f"Speed: {left_speed}, {right_speed}")
                     pibot.value = (left_speed, right_speed)
                 pibot.value = (0, 0)
             elif motion == "backward":
@@ -238,6 +269,12 @@ def set_mode():
     drive_mode = int(request.args.get('mode'))
     print(drive_mode)
     return str(drive_mode)
+
+@app.route('/offset')
+def set_offset():
+    global left_offset, right_offset
+    left_offset, right_offset = float(request.args.get('left_offset')), float(request.args.get('right_offset'))
+    return 'cao!!!!!!!'
     
 
 # Constants
@@ -258,6 +295,9 @@ pibot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(for
 left_encoder = Encoder(enc_a)
 right_encoder = Encoder(enc_b)
 use_pid = 0
+
+left_offset = 0
+right_offset = 0
 
 kp_turn= 0.1
 ki_turn = 0.005
