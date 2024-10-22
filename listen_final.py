@@ -244,8 +244,8 @@ def set_mode():
 ena = 25
 in1 = 24
 in2 = 23
-in3 = 6
-in4 = 5
+in3 = 5
+in4 = 6
 enb = 13
 
 enc_a = 26
