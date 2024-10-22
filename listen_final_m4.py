@@ -79,8 +79,8 @@ def handle_mode0():
             else:
                 if flag_new_pid_cycle:
                     # Initialize PID controllers with slightly different gains for each wheel
-                    pid_left = PID(kp, ki, kd, setpoint=right_encoder.value, output_limits=(0.6, 0.93))
-                    pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0.6, 0.93))
+                    pid_left = PID(kp, ki, kd, setpoint=right_encoder.value, output_limits=(0.6, 0.8))
+                    pid_right = PID(kp, ki, kd, setpoint=left_encoder.value, output_limits=(0.6, 0.8))
                     flag_new_pid_cycle = False
 
                 # Set each wheel's target to the other's encoder value
