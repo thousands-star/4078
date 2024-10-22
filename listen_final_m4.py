@@ -61,6 +61,7 @@ def handle_mode0():
     Self-driving mode with dual-PID control and bias correction.
     """
     global use_pid, left_speed, right_speed, motion
+    global left_offset, right_offset
     global kp, ki, kd
     flag_new_pid_cycle = True
     correction_bias = 0.07  # Small bias to adjust for consistent right drift
@@ -92,8 +93,8 @@ def handle_mode0():
                 right_output = pid_right(right_encoder.value)
 
                 # Apply a small bias to the right wheel
-                left_speed = left_output + 0.01
-                right_speed = right_output
+                left_speed = left_output + left_offset
+                right_speed = right_output + right_offset
 
                 # Set speeds based on motion direction
                 if motion == 'forward':
