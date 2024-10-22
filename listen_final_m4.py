@@ -102,8 +102,8 @@ def handle_mode0():
                     pibot.value = (-left_speed, -right_speed)
 
                 # Debug print statements
-                # print(f'Encoder Value - Left: {left_encoder.value}, Right: {right_encoder.value}')
-                # print(f'Wheel Speed - Left: {left_speed}, Right: {right_speed} (with bias)')
+                print(f'Encoder Value - Left: {left_encoder.value}, Right: {right_encoder.value}')
+                print(f'Wheel Speed - Left: {left_speed}, Right: {right_speed} (with bias)')
         
         # Small delay for smoother control loop
         time.sleep(0.005)
